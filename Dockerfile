@@ -3,11 +3,15 @@ FROM nvcr.io/nvidia/pytorch:24.06-py3
 # Set working directory
 WORKDIR /app
 
-# Copy requirements first for better caching
-COPY requirements.txt .
+# Copy lighter requirements for Docker to avoid disk space issues
+COPY requirements.docker.txt requirements.txt
 
 # Install python packages from requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip cache purge && \
+    rm -rf ~/.cache/pip && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Copy project files to the container
 COPY . /app/

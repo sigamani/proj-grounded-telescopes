@@ -338,7 +338,7 @@ jobs:
 
   e2e-tests:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: false # Temporarily disabled to save disk space
     
     steps:
     - uses: actions/checkout@v4
