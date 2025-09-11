@@ -14,7 +14,9 @@ def ray_cluster():
     """Initialize a local Ray cluster for testing."""
     try:
         if not ray.is_initialized():
-            ray.init(ignore_reinit_error=True, num_cpus=2, object_store_memory=1000000000)
+            ray.init(
+                ignore_reinit_error=True, num_cpus=2, object_store_memory=1000000000
+            )
         yield ray
     finally:
         if ray.is_initialized():

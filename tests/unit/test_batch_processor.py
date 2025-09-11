@@ -129,13 +129,15 @@ class TestBatchProcessor:
         # Ensure Ray is initialized for this test
         if not ray.is_initialized():
             ray.init(ignore_reinit_error=True, num_cpus=1)
-            
+
         # Test with limited object store memory
         cluster_resources = ray.cluster_resources()
 
         # Verify we have some memory allocated
         assert (
-            "object_store_memory" in cluster_resources or "memory" in cluster_resources or "CPU" in cluster_resources
+            "object_store_memory" in cluster_resources
+            or "memory" in cluster_resources
+            or "CPU" in cluster_resources
         )
 
     def test_output_serialization(self, temp_work_dir):

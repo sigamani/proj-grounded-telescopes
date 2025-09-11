@@ -22,7 +22,7 @@ class TestRayIntegration:
         # Ensure Ray is initialized for this test
         if not ray.is_initialized():
             ray.init(ignore_reinit_error=True, num_cpus=1)
-            
+
         assert ray.is_initialized()
 
         # Test cluster resources are available
@@ -35,7 +35,7 @@ class TestRayIntegration:
         # Ensure Ray is initialized for this test
         if not ray.is_initialized():
             ray.init(ignore_reinit_error=True, num_cpus=1)
-            
+
         # Test cluster info retrieval
         cluster_info = ray.cluster_resources()
         assert isinstance(cluster_info, dict)
