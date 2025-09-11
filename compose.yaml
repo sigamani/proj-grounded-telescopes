@@ -1,0 +1,14 @@
+services:
+  ray-head:
+    image: michaelsigamani/proj-grounded-telescopes:latest
+    command: >
+      ray start --head --dashboard-host=0.0.0.0
+        --port=6379 --dashboard-port=8265 --block
+    ports:
+      - "6379:6379"   # Ray client (optional)
+      - "8265:8265"   # Jobs REST API + dashboard
+    gpus: all
+    ipc: host
+    ulimits:
+      memlock: -1
+      stack: 67108864
