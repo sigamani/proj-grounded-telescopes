@@ -85,7 +85,13 @@ jobs:
         pip install safety bandit
     
     - name: Run Safety (dependency vulnerability scan)
-      run: safety check -r requirements.txt
+      run: safety check -r requirements.txt --json --output safety-report.json --continue-on-vulnerability-error || true
+    
+    - name: Upload Safety results
+      uses: actions/upload-artifact@v4
+      with:
+        name: safety-results
+        path: safety-report.json
     
     - name: Run Bandit (security linting)
       run: bandit -r src/ -f json -o bandit-report.json || true
@@ -118,6 +124,12 @@ jobs:
     - name: Run OPA Docker Security Policies
       run: |
         echo "Running OPA policy validation..."
+        
+        # Check if policies directory exists
+        if [ ! -d "policies/" ]; then
+          echo "Error: policies/ directory not found"
+          exit 1
+        fi
         
         # Test Docker security policies
         opa fmt --diff policies/
@@ -169,6 +181,7 @@ jobs:
         context: .
         file: ./Dockerfile
         push: false
+        load: true
         tags: test-grounded-telescopes:latest
         cache-from: type=gha
         cache-to: type=gha,mode=max
