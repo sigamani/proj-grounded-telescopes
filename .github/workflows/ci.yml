@@ -91,7 +91,7 @@ jobs:
       run: bandit -r src/ -f json -o bandit-report.json || true
     
     - name: Upload Bandit results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: bandit-results
         path: bandit-report.json
@@ -150,7 +150,7 @@ jobs:
         opa eval -d policies/ -i opa-data/docker-compose-config.yaml "data.security.compliance" --format pretty >> opa-report.md
     
     - name: Upload OPA Policy Report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: opa-policy-report
         path: opa-report.md
@@ -327,7 +327,7 @@ jobs:
         pytest tests/e2e/ --junitxml=e2e-results.xml || true
     
     - name: Upload test results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: e2e-test-results
@@ -356,7 +356,7 @@ jobs:
         pip-audit -r requirements.txt --format=json --output=audit-results.json || true
     
     - name: Upload audit results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: dependency-audit
         path: audit-results.json
