@@ -1,6 +1,6 @@
 # A High Throughput LLM Batch Server using RayData with vLLM
 
-[![CI Pipeline]([https://github.com/michaelsigamani/proj-grounded-telescopes/actions/workflows/ci.yml/badge.svg)](https://github.com/michaelsigamani/proj-grounded-telescopes/actions/workflows/ci.yml](https://github.com/sigamani/proj-grounded-telescopes/blob/main/.github/workflows/ci.yml))
+[![CI Pipeline]([https://github.com/michaelsigamani/proj-grounded-telescopes/actions/workflows/ci.yml/badge.svg)](https://github.com/sigamani/proj-grounded-telescopes/blob/main/.github/workflows/ci.yml))
 [![Docker Hub](https://img.shields.io/docker/pulls/michaelsigamani/proj-grounded-telescopes)](https://hub.docker.com/r/michaelsigamani/proj-grounded-telescopes)
 
 Production AI inference pipeline built on Ray + vLLM with monitoring and testing.
