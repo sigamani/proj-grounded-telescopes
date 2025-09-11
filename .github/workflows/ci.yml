@@ -85,7 +85,7 @@ jobs:
         pip install safety bandit
     
     - name: Run Safety (dependency vulnerability scan)
-      run: safety check -r requirements.txt
+      run: safety scan -r requirements.txt
     
     - name: Run Bandit (security linting)
       run: bandit -r src/ -f json -o bandit-report.json || true
