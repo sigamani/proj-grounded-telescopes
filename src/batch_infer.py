@@ -1,5 +1,6 @@
 import ray
 
+
 def create_batch_processor():
     """Create a batch processor for LLM inference."""
     try:
@@ -7,7 +8,7 @@ def create_batch_processor():
     except ImportError:
         print("vLLM not available - using mock processor for testing")
         return None
-    
+
     if not ray.is_initialized():
         ray.init()
 
@@ -31,15 +32,17 @@ def create_batch_processor():
     )
     return processor
 
+
 def run_batch_inference():
     """Run batch inference if called directly."""
     processor = create_batch_processor()
     if processor is None:
         print("Processor not available - skipping inference")
         return
-    
+
     ds = ray.data.from_items([{"prompt": "Summarise AML PEP-screening risks."}])
     processor(ds).write_json("/tmp/out")
+
 
 if __name__ == "__main__":
     run_batch_inference()
