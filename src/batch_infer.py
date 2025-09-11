@@ -4,10 +4,10 @@ from ray.data.llm import build_llm_processor, vLLMEngineProcessorConfig
 ray.init()
 
 cfg = vLLMEngineProcessorConfig(
-    model_source="meta-llama/Llama-3.1-8B-Instruct",
-    engine_kwargs={"max_model_len": 16384},
+    model_source="microsoft/DialoGPT-medium",
+    engine_kwargs={"max_model_len": 1024},
     concurrency=1,
-    batch_size=64,
+    batch_size=32,
 )
 
 processor = build_llm_processor(
