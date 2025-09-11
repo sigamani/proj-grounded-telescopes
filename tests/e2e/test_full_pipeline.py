@@ -11,14 +11,15 @@ Key failure scenarios tested:
 - Network connectivity between services
 """
 
-import pytest
-import requests
-import time
-import subprocess
 import json
 import os
-import docker
+import subprocess
+import time
 from pathlib import Path
+
+import docker
+import pytest
+import requests
 
 
 @pytest.fixture(scope="module")

@@ -1,5 +1,5 @@
 import ray
-from ray.data.llm import vLLMEngineProcessorConfig, build_llm_processor
+from ray.data.llm import build_llm_processor, vLLMEngineProcessorConfig
 
 ray.init()
 

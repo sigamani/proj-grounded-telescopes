@@ -11,12 +11,13 @@ Key failure scenarios tested:
 - Resource allocation problems
 """
 
-import pytest
-import docker
-import subprocess
 import json
+import subprocess
 import time
 from pathlib import Path
+
+import docker
+import pytest
 
 
 class TestDockerIntegration:

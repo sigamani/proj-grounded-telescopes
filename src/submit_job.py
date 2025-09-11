@@ -5,12 +5,13 @@ cluster via the Jobs REST API. Used by the jobs-runner
 service in production deployment.
 """
 
-import requests
 import json
-import time
-import sys
 import os
+import sys
+import time
 from pathlib import Path
+
+import requests
 
 
 class RayJobsClient:
