@@ -4,7 +4,7 @@ from ray.data.llm import build_llm_processor, vLLMEngineProcessorConfig
 ray.init()
 
 cfg = vLLMEngineProcessorConfig(
-    model="meta-llama/Llama-3.1-8B-Instruct",
+    model_source="meta-llama/Llama-3.1-8B-Instruct",
     engine_kwargs={"max_model_len": 16384},
     concurrency=1,
     batch_size=64,
