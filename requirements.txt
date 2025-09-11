@@ -1,5 +1,7 @@
 # Core Ray and vLLM dependencies
 ray[data]==2.49.1
+pydantic>=2.6,<3 
+pyarrow>=12,<16
 
 # ML/AI libraries
 huggingface_hub>=0.33.0
