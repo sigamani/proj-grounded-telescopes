@@ -12,10 +12,13 @@ import ray
 @pytest.fixture(scope="session")
 def ray_cluster():
     """Initialize a local Ray cluster for testing."""
-    if not ray.is_initialized():
-        ray.init(ignore_reinit_error=True, num_cpus=2, object_store_memory=1000000000)
-    yield
-    ray.shutdown()
+    try:
+        if not ray.is_initialized():
+            ray.init(ignore_reinit_error=True, num_cpus=2, object_store_memory=1000000000)
+        yield ray
+    finally:
+        if ray.is_initialized():
+            ray.shutdown()
 
 
 @pytest.fixture

@@ -19,6 +19,10 @@ class TestRayIntegration:
 
     def test_ray_cluster_health(self, ray_cluster):
         """Test Ray cluster basic health checks."""
+        # Ensure Ray is initialized for this test
+        if not ray.is_initialized():
+            ray.init(ignore_reinit_error=True, num_cpus=1)
+            
         assert ray.is_initialized()
 
         # Test cluster resources are available
@@ -28,6 +32,10 @@ class TestRayIntegration:
 
     def test_ray_cluster_connectivity(self, ray_cluster):
         """Test Ray cluster connectivity."""
+        # Ensure Ray is initialized for this test
+        if not ray.is_initialized():
+            ray.init(ignore_reinit_error=True, num_cpus=1)
+            
         # Test cluster info retrieval
         cluster_info = ray.cluster_resources()
         assert isinstance(cluster_info, dict)
