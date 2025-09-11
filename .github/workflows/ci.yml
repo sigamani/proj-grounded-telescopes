@@ -85,7 +85,6 @@ jobs:
         pip install safety bandit
     
     - name: Run Safety (dependency vulnerability scan)
-<<<<<<< HEAD
       run: safety check -r requirements.txt --json --output safety-report.json --continue-on-vulnerability-error || true
     
     - name: Upload Safety results
@@ -93,9 +92,8 @@ jobs:
       with:
         name: safety-results
         path: safety-report.json
-=======
-      run: safety scan -r requirements.txt
->>>>>>> f538c804fcf20474b1b276ee264ff17c812cdf32
+        run: safety scan -r requirements.txt
+
     
     - name: Run Bandit (security linting)
       run: bandit -r src/ -f json -o bandit-report.json || true
@@ -385,10 +383,10 @@ jobs:
     steps:
     - name: Notify on success
       if: needs.lint-and-format.result == 'success' && needs.unit-tests.result == 'success' && needs.security-scan.result == 'success' && needs.opa-security-policies.result == 'success' && needs.docker-build-test.result == 'success'
-      run: echo "✅ All CI checks including OPA policy validation passed!"
+      run: echo "All CI checks including OPA policy validation passed!"
     
     - name: Notify on failure  
       if: needs.lint-and-format.result == 'failure' || needs.unit-tests.result == 'failure' || needs.security-scan.result == 'failure' || needs.opa-security-policies.result == 'failure' || needs.docker-build-test.result == 'failure'
       run: |
-        echo "❌ CI checks failed! Check OPA policy violations."
+        echo "CI checks failed! Check OPA policy violations."
         exit 1
