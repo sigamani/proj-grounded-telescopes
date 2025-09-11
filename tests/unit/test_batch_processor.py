@@ -13,7 +13,7 @@ Key failure points tested:
 import json
 import os
 import sys
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 import ray
@@ -21,7 +21,7 @@ import ray
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
-from batch_infer import *
+import batch_infer  # noqa: F401, E402
 
 
 class TestBatchProcessor:
@@ -46,13 +46,7 @@ class TestBatchProcessor:
         mock_config.return_value = Mock()
         mock_build_processor.return_value = Mock()
 
-        # Test configuration parameters
-        config_params = {
-            "model": "meta-llama/Llama-3.1-8B-Instruct",
-            "engine_kwargs": {"max_model_len": 16384},
-            "concurrency": 1,
-            "batch_size": 64,
-        }
+        # Configuration parameters are handled by vLLM configuration mock
 
         mock_config.assert_not_called()  # Will be called when batch_infer imports
 

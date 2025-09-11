@@ -11,7 +11,6 @@ Key failure scenarios tested:
 - Network connectivity between services
 """
 
-import json
 import os
 import subprocess
 import time
@@ -145,8 +144,7 @@ class TestFullPipeline:
 
     def test_output_persistence(self, docker_compose_stack):
         """Test output files are persisted correctly."""
-        # Create test input
-        test_input = [{"prompt": "What is 2+2?"}]
+        # Test input will be handled by the batch inference job
 
         # Submit job through Ray Jobs API
         job_data = {
@@ -193,7 +191,10 @@ class TestFullPipeline:
         # Test Ray head accessibility from jobs-runner perspective
         result = client.containers.run(
             image="proj-grounded-telescopes:latest",
-            command="python -c \"import ray; ray.init('ray://ray-head:10001'); print('Connected'); ray.shutdown()\"",
+            command=(
+                "python -c \"import ray; ray.init('ray://ray-head:10001'); "
+                "print('Connected'); ray.shutdown()\""
+            ),
             network="proj-grounded-telescopes_ray-network",
             remove=True,
             detach=False,

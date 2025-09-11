@@ -6,7 +6,6 @@ service in production deployment.
 """
 
 import json
-import os
 import sys
 import time
 from pathlib import Path
@@ -38,7 +37,7 @@ class RayJobsClient:
             job_info = response.json()
             job_id = job_info["job_id"]
 
-            print(f"Job submitted successfully!")
+            print("Job submitted successfully!")
             print(f"Job ID: {job_id}")
             print(f"Status: {job_info.get('status', 'UNKNOWN')}")
 
@@ -78,9 +77,8 @@ class RayJobsClient:
                 return True
             elif status == "FAILED":
                 print("Job failed!")
-                print(
-                    f"Error details: {job_status.get('message', 'No details available')}"
-                )
+                error_details = job_status.get("message", "No details available")
+                print(f"Error details: {error_details}")
                 return False
             elif status in ["STOPPED", "CANCELLED"]:
                 print(f"Job {status.lower()}")

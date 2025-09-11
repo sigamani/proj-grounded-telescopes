@@ -2,7 +2,6 @@
 Pytest configuration and shared fixtures for Ray + vLLM testing.
 """
 
-import os
 import tempfile
 from unittest.mock import Mock, patch
 

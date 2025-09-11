@@ -11,7 +11,6 @@ Key failure scenarios tested:
 - Resource allocation problems
 """
 
-import json
 import subprocess
 import time
 from pathlib import Path
@@ -70,7 +69,9 @@ class TestDockerIntegration:
         try:
             output = docker_client.containers.run(
                 "test-grounded-telescopes",
-                command="python -c \"import ray, vllm, torch; print('Dependencies OK')\"",
+                command=(
+                    "python -c \"import ray, vllm, torch; print('Dependencies OK')\""
+                ),
                 detach=False,
                 remove=True,
             )
@@ -88,7 +89,10 @@ class TestDockerIntegration:
         try:
             output = docker_client.containers.run(
                 "test-grounded-telescopes",
-                command="python -c \"import ray; ray.init(); print('Ray initialized'); ray.shutdown()\"",
+                command=(
+                    'python -c "import ray; ray.init(); '
+                    "print('Ray initialized'); ray.shutdown()\""
+                ),
                 detach=False,
                 remove=True,
             )
@@ -127,7 +131,11 @@ class TestDockerIntegration:
         try:
             output = docker_client.containers.run(
                 "test-grounded-telescopes",
-                command='python -c "import os; print(f\'RAY_ADDRESS={os.environ.get(\\"RAY_ADDRESS\\", \\"NOT_SET\\")}\')"',
+                command=(
+                    'python -c "import os; '
+                    'print(f\'RAY_ADDRESS={os.environ.get(\\"RAY_ADDRESS\\", '
+                    '\\"NOT_SET\\")}\')"'
+                ),
                 detach=False,
                 remove=True,
             )
@@ -189,7 +197,10 @@ class TestDockerIntegration:
         try:
             output = docker_client.containers.run(
                 "test-grounded-telescopes",
-                command="python -c \"import torch; print(f'CUDA available: {torch.cuda.is_available()}')\"",
+                command=(
+                    'python -c "import torch; '
+                    "print(f'CUDA available: {torch.cuda.is_available()}')\""
+                ),
                 device_requests=[
                     docker.types.DeviceRequest(count=-1, capabilities=[["gpu"]])
                 ],

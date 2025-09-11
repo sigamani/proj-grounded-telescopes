@@ -10,10 +10,6 @@ Key failure points tested:
 - Dashboard accessibility
 """
 
-import time
-from unittest.mock import Mock, patch
-
-import psutil
 import pytest
 import ray
 import requests
