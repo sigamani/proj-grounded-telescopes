@@ -1,8 +1,7 @@
-# batch_infer.py
 import ray
 from ray.data.llm import vLLMEngineProcessorConfig, build_llm_processor
 
-ray.init()  # connects to local cluster inside the job
+ray.init()  
 
 cfg = vLLMEngineProcessorConfig(
     model="meta-llama/Llama-3.1-8B-Instruct",
@@ -21,4 +20,4 @@ processor = build_llm_processor(
 )
 
 ds = ray.data.from_items([{"prompt": "Summarise AML PEP-screening risks."}])
-processor(ds).write_json("/tmp/out")  # write results to volume/object store
+processor(ds).write_json("/tmp/out")  

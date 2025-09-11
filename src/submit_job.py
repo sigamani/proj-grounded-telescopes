@@ -1,9 +1,8 @@
-#!/usr/bin/env python3
 """
 Ray Jobs API client for submitting batch inference jobs.
-
-This script submits jobs to the Ray cluster via the Jobs REST API.
-Used by the jobs-runner service in production deployment.
+The role of this script is to submits jobs to the Ray 
+cluster via the Jobs REST API. Used by the jobs-runner 
+service in production deployment.
 """
 import requests
 import json
@@ -22,7 +21,7 @@ class RayJobsClient:
         """Submit a job to Ray cluster."""
         job_spec = {
             "entrypoint": entrypoint,
-            "job_id": None,  # Let Ray generate job ID
+            "job_id": None,  
             "runtime_env": runtime_env or {},
             "metadata": metadata or {}
         }
@@ -41,14 +40,14 @@ class RayJobsClient:
             job_info = response.json()
             job_id = job_info["job_id"]
             
-            print(f"✅ Job submitted successfully!")
+            print(f"Job submitted successfully!")
             print(f"Job ID: {job_id}")
             print(f"Status: {job_info.get('status', 'UNKNOWN')}")
             
             return job_id
             
         except requests.exceptions.RequestException as e:
-            print(f"❌ Failed to submit job: {e}")
+            print(f"Failed to submit job: {e}")
             return None
     
     def get_job_status(self, job_id):
@@ -58,12 +57,12 @@ class RayJobsClient:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            print(f"❌ Failed to get job status: {e}")
+            print(f"Failed to get job status: {e}")
             return None
     
     def wait_for_job_completion(self, job_id, timeout=300):
         """Wait for job to complete."""
-        print(f"⏳ Waiting for job {job_id} to complete...")
+        print(f"Waiting for job {job_id} to complete...")
         
         start_time = time.time()
         while time.time() - start_time < timeout:
@@ -77,19 +76,19 @@ class RayJobsClient:
             print(f"Job status: {status}")
             
             if status == "SUCCEEDED":
-                print("✅ Job completed successfully!")
+                print("Job completed successfully!")
                 return True
             elif status == "FAILED":
-                print("❌ Job failed!")
+                print("Job failed!")
                 print(f"Error details: {job_status.get('message', 'No details available')}")
                 return False
             elif status in ["STOPPED", "CANCELLED"]:
-                print(f"⏹️ Job {status.lower()}")
+                print(f"Job {status.lower()}")
                 return False
             
             time.sleep(10)  # Check every 10 seconds
         
-        print("⏰ Timeout waiting for job completion")
+        print("Timeout waiting for job completion")
         return False
     
     def list_jobs(self):
@@ -99,7 +98,7 @@ class RayJobsClient:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            print(f"❌ Failed to list jobs: {e}")
+            print(f"Failed to list jobs: {e}")
             return None
 
 
