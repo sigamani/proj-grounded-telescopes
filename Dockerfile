@@ -3,12 +3,11 @@ FROM nvcr.io/nvidia/pytorch:24.06-py3
 # Set working directory
 WORKDIR /app
 
+# Copy requirements first for better caching
+COPY requirements.txt .
 
-# Install python packages 
-RUN pip install --no-cache-dir \
-    "ray[data]==2.49.1" "pyarrow>=12,<16" "pydantic>=2.6,<3" "vllm==0.10.0" \
-    pandas numpy transformers openai tqdm huggingface_hub datasets \
-    sentencepiece accelerate "tokenizers>=0.13.3"
+# Install python packages from requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy project files to the container
 COPY . /app/

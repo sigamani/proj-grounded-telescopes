@@ -1,35 +1,12 @@
-FROM rayproject/ray:2.9.3-py310
+FROM nvcr.io/nvidia/pytorch:24.06-py3 
 
 # Set working directory
 WORKDIR /app
 
-# Install additional Python dependencies
-RUN pip install --no-cache-dir \
-    "ray[data]>=2.9.0" \
-    pandas \
-    numpy \
-    torch \
-    transformers \
-    openai \
-    tqdm \
-    jupyterlab \
-    jupyter \
-    matplotlib \
-    scikit-learn \
-    huggingface_hub \
-    datasets
+# Copy requirements first for better caching
+COPY requirements.txt .
 
-# Install vLLM with appropriate support
-RUN pip install --no-cache-dir vllm 
-
-# Install additional dependencies for Llama models
-RUN pip install --no-cache-dir \
-    sentencepiece \
-    accelerate \
-    tokenizers>=0.13.3
-
-# Copy requirements file if needed
-COPY requirements.txt /app/
+# Install python packages from requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy project files to the container

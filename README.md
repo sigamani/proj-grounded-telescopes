@@ -1,70 +1,233 @@
-Intended dir structure
+# Grounded Telescopes - Ray + vLLM Inference Pipeline
 
+[![CI Pipeline](https://github.com/michaelsigamani/proj-grounded-telescopes/actions/workflows/ci.yml/badge.svg)](https://github.com/michaelsigamani/proj-grounded-telescopes/actions/workflows/ci.yml)
+[![Docker Hub](https://img.shields.io/docker/pulls/michaelsigamani/proj-grounded-telescopes)](https://hub.docker.com/r/michaelsigamani/proj-grounded-telescopes)
 
-├── Dockerfile
-├── docker-compose.yml
-├── requirements.txt
-├── /src               # optional: put batch_infer.py / preprocessing (not written but will be pydantic serialisation of pii) / utilities code and stuff
-├── /monitoring        # configs for Grafana / Prometheus / Loki
-│    ├── prometheus.yml
-│    ├── dashboards/
-│    └── ...
-├── /ray-tmp           # host-volume for Ray’s spill/session directories (dunno if this is a great place due to size constraints maybe /tmp?)
-└── .dockerignore      (yet to be birthed)
+Production AI inference pipeline built on Ray + vLLM with monitoring and testing.
 
-This repository contains the code, infrastructure, and configuration to build, deploy, and monitor an AI inference / LLM pipeline, based on Ray + vLLM. Core features include:
+## Quick Start
 
-Component Purpose
+### Development
+```bash
+docker compose -f compose.dev.yaml up --build
+```
 
-Ray Head Service Master node for Ray cluster. Handles task scheduling, dashboards, and cluster coordination. Haiku (Inference) Service Client/worker service that processes prompts via vLLM, generates haiku output. Dockerfile(s) Defines container image builds: base image, Python dependencies (Ray, vLLM, etc.), and entrypoints. Docker Compose Setup Orchestrates multi-container stack including Ray head + inference service (haiku). GPU Support Uses NVIDIA base images, requires container toolkit, configured to detect and use CUDA. Monitoring Stack Prometheus + Grafana + Loki/Promtail to collect metrics and logs of Ray + inference processes. Configuration Files Environment variables, Ray init settings, spill directories, and port mappings to manage performance and resource usage.
+### Production
+```bash
+docker compose -f compose.prod.yaml up
+```
 
-Usage
+Access:
+- Ray Dashboard: http://localhost:8265
+- Prometheus: http://localhost:9090 (dev only)
+- Grafana: http://localhost:3000 (dev only)
 
-Build the Docker image locally or push to Docker Hub.
-Start services via docker compose up --build.
-Access Ray dashboard (http://localhost:8265⁠), model API endpoints (e.g. http://localhost:8000⁠), etc.
-Enable monitoring/logs via added stack to track performance, logs, and system metrics.
-                                  +---------------------+
-                                  | Client / API Caller |
-                                  +----------+----------+
-                                             |
-                                       HTTP / RPC
-                                             |
-                                  +----------v----------+
-                                  |     Ray Head Node    |
-                                  | (Scheduler, Metrics, |
-                                  |   Dashboard, etc.)   |
-                                  +----------+-----------+
-                                             |
-            +--------------------------------+---------------------------------+
-            |                                |                                 |
-    +-------v-------+              +---------v---------+        +--------------v--------------+
-    | Worker: vLLM   |              | Worker: Tokenizer /  |        | Object Store / Spill / KV |
-    |  Inference     |              | Preprocessor        |        | Cache / GPU Memory          |
-    +-------+--------+              +---------------------+        +-----------------------------+
-            |                                |                                 |
-            +--------------------------------+---------------------------------+
-                                             |
-                        +--------------------+--------------------+
-                        | Monitoring & Logging                   |
-                        |                                          |
-                +-------v------+        +------------------v------------------+
-                | Metrics      |        |   Logs                            |
-                | Prometheus   |        | Loki / Promtail                   |
-                +--------------+        +-----------------------------------+
-                        |
-                +-------v-------+
-                | Grafana       |
-                | Dashboards    |
-                +---------------+
-Key Dependencies & Versions
+<details>
+<summary>Features</summary>
 
-Python 3.10
-Ray = 2.49.1 with ray[data] for LLM pipelines
-vLLM compatible version = 0.10.0 - updating to 0.10.0 will trigger a got an unexpected keyword argument 'disable_log_requests' known bug
-CUDA-capable environment via proper base image (e.g. NVIDIA PyTorch image) + container runtime configured for GPUs
-Known Limitations
+- Ray cluster distributed computing
+- vLLM high-performance LLM inference
+- NVIDIA CUDA GPU support
+- Prometheus + Grafana + Loki monitoring stack
+- Comprehensive testing and CI/CD
+- Pre-built Docker Hub images
 
-Spill directory and object store memory can fill up quickly. Requires sufficient disk and memory.
-Version mismatches between Ray & vLLM flags (such as disable_log_requests) have caused errors — versions must match exactly.
-Permissions issues with mounted volume dirs (e.g. /tmp/ray) may require setup of host directories with correct ownership.
+</details>
+
+<details>
+<summary>Architecture</summary>
+
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Client/API    │───▶│   Ray Head Node   │───▶│ vLLM Inference  │
+│                 │    │  (Scheduler)      │    │   Workers       │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+                                │
+                       ┌────────┴────────┐
+                       │   Monitoring    │
+                       │ (Prometheus/    │
+                       │  Grafana/Loki)  │
+                       └─────────────────┘
+```
+
+### Core Services
+- Ray Head: Master node for task scheduling and cluster coordination
+- Jobs Runner: Client service for submitting batch inference jobs
+- vLLM Engine: High-performance LLM inference with batching
+
+### Monitoring (Development)
+- Prometheus: Metrics collection and alerting
+- Grafana: Visualization and dashboards  
+- Loki: Log aggregation and analysis
+- Promtail: Log shipping agent
+
+</details>
+
+<details>
+<summary>Usage</summary>
+
+### Submit Batch Jobs
+
+```bash
+# Run default batch inference
+docker compose -f compose.prod.yaml run --rm jobs-runner
+
+# Run custom script
+docker compose -f compose.prod.yaml run --rm jobs-runner python src/your_script.py
+```
+
+### Ray Jobs API
+
+```python
+import requests
+
+job_data = {
+    "entrypoint": "python src/batch_infer.py",
+    "runtime_env": {"working_dir": "."}
+}
+
+response = requests.post("http://localhost:8265/api/jobs/", json=job_data)
+job_info = response.json()
+print(f"Job ID: {job_info['job_id']}")
+```
+
+</details>
+
+<details>
+<summary>Testing</summary>
+
+```bash
+# Unit tests
+pytest tests/unit/ -v
+
+# End-to-end tests  
+pytest tests/e2e/ -v
+
+# All tests with coverage
+pytest --cov=src tests/
+```
+
+</details>
+
+<details>
+<summary>Configuration</summary>
+
+### Environment Variables
+- `RAY_ADDRESS`: Ray cluster address (default: "auto")
+- `CUDA_VISIBLE_DEVICES`: GPU device selection
+- `RAY_DISABLE_IMPORT_WARNING`: Suppress Ray warnings
+
+### Model Configuration
+Edit `src/batch_infer.py`:
+```python
+cfg = vLLMEngineProcessorConfig(
+    model="meta-llama/Llama-3.1-8B-Instruct",
+    engine_kwargs={"max_model_len": 16384},
+    concurrency=1, 
+    batch_size=64,
+)
+```
+
+</details>
+
+<details>
+<summary>Monitoring</summary>
+
+### Metrics Available
+- Ray cluster resources and task execution
+- vLLM inference throughput and latency  
+- Container resource usage
+- GPU utilization (when available)
+
+### Dashboards
+- Ray Dashboard: http://localhost:8265
+- Grafana: http://localhost:3000 (admin/admin)
+- Prometheus: http://localhost:9090
+
+</details>
+
+<details>
+<summary>Deployment</summary>
+
+### Two-Stage Process
+
+**Stage 1: Build & Test**
+1. CI/CD builds image from NVIDIA/PyTorch base
+2. Adds Ray 2.49.1 + vLLM 0.10.0 + dependencies  
+3. Runs comprehensive test suite
+4. Pushes to Docker Hub as version 0.1.1 on success
+
+**Stage 2: Production**
+5. Production deploys tested image from Docker Hub
+6. Runs Ray cluster with job submission capability
+
+### CI/CD Pipeline
+
+**On Pull Request:**
+- Code linting and formatting
+- Unit and integration tests
+- Security vulnerability scanning
+- OPA policy validation
+- Docker build verification
+
+**On Main Branch Push:**
+- All PR checks plus full end-to-end testing
+- Multi-architecture build (amd64/arm64)
+- Push to Docker Hub with version tags
+
+</details>
+
+<details>
+<summary>Security</summary>
+
+- Dependency vulnerability scanning (Safety + Bandit)
+- OPA policy enforcement for container security
+- Resource limits and isolation
+- Minimal attack surface in production images
+
+</details>
+
+<details>
+<summary>Performance</summary>
+
+- GPU acceleration with CUDA support
+- Optimized batch processing for throughput
+- Memory and CPU resource management
+- Ray object store with spill handling
+
+</details>
+
+<details>
+<summary>Links</summary>
+
+- [Docker Hub Repository](https://hub.docker.com/r/michaelsigamani/proj-grounded-telescopes)
+- [Ray Documentation](https://docs.ray.io/)
+- [vLLM Documentation](https://docs.vllm.ai/)
+
+</details>
+
+<details>
+<summary>Requirements</summary>
+
+- Docker & Docker Compose (latest docker compose), vLLM 0.10.0 and Ray 2.49.1
+- NVIDIA Docker Runtime (for GPU support) with nvidia-smi and CUDA drivers installed
+- 24GB+ VRAM minimum (RTX 3090 or equivalent for 8B Llama models)
+- CUDA 12 or higher (required, not optional)
+
+</details>
+
+<details>
+<summary>Contributing</summary>
+
+1. Fork the repository
+2. Create a feature branch
+3. Make changes with tests
+4. Submit a pull request
+
+All contributions are tested via CI/CD before merging.
+
+</details>
+
+## License
+
+MIT License - see LICENSE file for details.
