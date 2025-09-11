@@ -1,0 +1,377 @@
+name: CI Pipeline
+
+on:
+  pull_request:
+    branches: [ main, dev ]
+  push:
+    branches: [ main ]
+
+env:
+  PYTHON_VERSION: '3.10'
+  RAY_DISABLE_IMPORT_WARNING: 1
+
+jobs:
+  lint-and-format:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install black flake8 isort mypy
+    
+    - name: Run Black
+      run: black --check --diff src/ tests/
+    
+    - name: Run isort
+      run: isort --check-only --diff src/ tests/
+    
+    - name: Run Flake8
+      run: flake8 src/ tests/ --max-line-length=88 --extend-ignore=E203,W503
+    
+    - name: Run MyPy
+      run: mypy src/ --ignore-missing-imports
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11']
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov pytest-mock
+    
+    - name: Run unit tests
+      run: |
+        pytest tests/unit/ -v --cov=src --cov-report=xml --cov-report=term
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install security tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install safety bandit
+    
+    - name: Run Safety (dependency vulnerability scan)
+      run: safety check -r requirements.txt
+    
+    - name: Run Bandit (security linting)
+      run: bandit -r src/ -f json -o bandit-report.json || true
+    
+    - name: Upload Bandit results
+      uses: actions/upload-artifact@v3
+      with:
+        name: bandit-results
+        path: bandit-report.json
+
+  opa-security-policies:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup OPA
+      uses: open-policy-agent/setup-opa@v2
+      with:
+        version: latest
+    
+    - name: Generate Docker Compose inspection data
+      run: |
+        # Create inspection data for policy validation
+        mkdir -p opa-data
+        
+        # Extract Docker configuration for OPA evaluation
+        docker compose -f compose.dev.yaml config > opa-data/docker-compose-config.yaml
+        docker compose -f compose.prod.yaml config > opa-data/docker-compose-prod-config.yaml
+    
+    - name: Run OPA Docker Security Policies
+      run: |
+        echo "Running OPA policy validation..."
+        
+        # Test Docker security policies
+        opa fmt --diff policies/
+        opa test policies/
+        
+        # Validate against Docker configurations
+        opa eval -d policies/ -i opa-data/docker-compose-config.yaml "data.docker.security.deny[_]" --format pretty
+        opa eval -d policies/ -i opa-data/docker-compose-prod-config.yaml "data.docker.security.deny[_]" --format pretty
+    
+    - name: Run OPA Resource Limit Policies  
+      run: |
+        # Validate resource policies
+        opa eval -d policies/ -i opa-data/docker-compose-config.yaml "data.docker.resources.deny[_]" --format pretty
+        opa eval -d policies/ -i opa-data/docker-compose-prod-config.yaml "data.docker.resources.deny[_]" --format pretty
+    
+    - name: Run OPA Compliance Policies
+      run: |
+        # Validate compliance policies
+        opa eval -d policies/ -i opa-data/docker-compose-config.yaml "data.security.compliance.deny[_]" --format pretty
+        opa eval -d policies/ -i opa-data/docker-compose-prod-config.yaml "data.security.compliance.deny[_]" --format pretty
+    
+    - name: Generate OPA Policy Report
+      run: |
+        echo "# OPA Policy Validation Report" > opa-report.md
+        echo "## Docker Security Policies" >> opa-report.md
+        opa eval -d policies/ -i opa-data/docker-compose-config.yaml "data.docker.security" --format pretty >> opa-report.md
+        echo "## Resource Limit Policies" >> opa-report.md  
+        opa eval -d policies/ -i opa-data/docker-compose-config.yaml "data.docker.resources" --format pretty >> opa-report.md
+        echo "## Compliance Policies" >> opa-report.md
+        opa eval -d policies/ -i opa-data/docker-compose-config.yaml "data.security.compliance" --format pretty >> opa-report.md
+    
+    - name: Upload OPA Policy Report
+      uses: actions/upload-artifact@v3
+      with:
+        name: opa-policy-report
+        path: opa-report.md
+
+  docker-build-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        push: false
+        tags: test-grounded-telescopes:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+    
+    - name: Test Docker image
+      run: |
+        docker run --rm test-grounded-telescopes:latest python --version
+        docker run --rm test-grounded-telescopes:latest python -c "import ray, torch; print('Dependencies OK')"
+
+  build-and-push:
+    runs-on: ubuntu-latest
+    needs: [lint-and-format, unit-tests, security-scan, opa-security-policies, docker-build-test]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+    
+    - name: Extract version
+      id: version
+      run: echo "version=0.1.1" >> $GITHUB_OUTPUT
+    
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        push: true
+        tags: |
+          michaelsigamani/proj-grounded-telescopes:${{ steps.version.outputs.version }}
+          michaelsigamani/proj-grounded-telescopes:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64,linux/arm64
+    
+    - name: Update Docker Hub description
+      uses: peter-evans/dockerhub-description@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        repository: michaelsigamani/proj-grounded-telescopes
+        readme-filepath: ./README.md
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        push: false
+        tags: proj-grounded-telescopes:latest
+        load: true
+    
+    - name: Create monitoring configs directory
+      run: |
+        mkdir -p monitoring/prometheus monitoring/grafana monitoring/loki monitoring/pomtail
+        echo 'global:' > monitoring/prometheus/prometheus.yaml
+        echo '  scrape_interval: 15s' >> monitoring/prometheus/prometheus.yaml
+        touch monitoring/loki/config.yaml
+        touch monitoring/pomtail/config.yaml
+        touch monitoring/grafana/provisioning
+    
+    - name: Start Docker Compose stack (dev environment)
+      run: |
+        docker compose -f compose.dev.yaml up -d --wait
+        sleep 30  # Additional wait for Ray to be ready
+    
+    - name: Run integration tests
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest docker requests
+        pytest tests/e2e/test_docker_integration.py -v -x
+    
+    - name: Check service health
+      run: |
+        curl -f http://localhost:8265/ || echo "Ray dashboard not accessible"
+        curl -f http://localhost:9090/ || echo "Prometheus not accessible"  
+        curl -f http://localhost:3000/ || echo "Grafana not accessible"
+    
+    - name: Get container logs on failure
+      if: failure()
+      run: |
+        docker compose logs ray-head
+        docker compose logs prometheus
+        docker compose logs grafana
+    
+    - name: Cleanup
+      if: always()
+      run: |
+        docker compose -f compose.dev.yaml down -v
+        docker system prune -f
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        push: false
+        tags: proj-grounded-telescopes:latest
+        load: true
+    
+    - name: Create monitoring configs directory
+      run: |
+        mkdir -p monitoring/prometheus monitoring/grafana monitoring/loki monitoring/pomtail
+        echo 'global:' > monitoring/prometheus/prometheus.yaml
+        echo '  scrape_interval: 15s' >> monitoring/prometheus/prometheus.yaml
+        touch monitoring/loki/config.yaml
+        touch monitoring/pomtail/config.yaml
+        mkdir -p monitoring/grafana/provisioning
+    
+    - name: Start Docker Compose stack (dev environment)
+      run: |
+        docker compose -f compose.dev.yaml up -d --wait
+        sleep 60  # Longer wait for full E2E readiness
+    
+    - name: Install test dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest docker requests
+    
+    - name: Run full E2E tests
+      run: |
+        pytest tests/e2e/ -v --tb=short
+      timeout-minutes: 30
+    
+    - name: Generate test report
+      if: always()
+      run: |
+        pytest tests/e2e/ --junitxml=e2e-results.xml || true
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: e2e-test-results
+        path: e2e-results.xml
+    
+    - name: Cleanup
+      if: always()
+      run: |
+        docker compose -f compose.dev.yaml down -v
+        docker system prune -f
+
+  dependency-check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Check for dependency updates
+      run: |
+        python -m pip install --upgrade pip
+        pip install pip-audit
+        pip-audit -r requirements.txt --format=json --output=audit-results.json || true
+    
+    - name: Upload audit results
+      uses: actions/upload-artifact@v3
+      with:
+        name: dependency-audit
+        path: audit-results.json
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: [lint-and-format, unit-tests, security-scan, opa-security-policies, docker-build-test]
+    if: always()
+    steps:
+    - name: Notify on success
+      if: needs.lint-and-format.result == 'success' && needs.unit-tests.result == 'success' && needs.security-scan.result == 'success' && needs.opa-security-policies.result == 'success' && needs.docker-build-test.result == 'success'
+      run: echo "✅ All CI checks including OPA policy validation passed!"
+    
+    - name: Notify on failure  
+      if: needs.lint-and-format.result == 'failure' || needs.unit-tests.result == 'failure' || needs.security-scan.result == 'failure' || needs.opa-security-policies.result == 'failure' || needs.docker-build-test.result == 'failure'
+      run: |
+        echo "❌ CI checks failed! Check OPA policy violations."
+        exit 1
