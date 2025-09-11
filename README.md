@@ -1,4 +1,4 @@
-# Grounded Telescopes - Ray + vLLM Inference Pipeline
+# Grounded Telescopes - A High Throughput LLM Batch Server using RayData with vLLM
 
 [![CI Pipeline](https://github.com/michaelsigamani/proj-grounded-telescopes/actions/workflows/ci.yml/badge.svg)](https://github.com/michaelsigamani/proj-grounded-telescopes/actions/workflows/ci.yml)
 [![Docker Hub](https://img.shields.io/docker/pulls/michaelsigamani/proj-grounded-telescopes)](https://hub.docker.com/r/michaelsigamani/proj-grounded-telescopes)
@@ -29,7 +29,7 @@ Access:
 - vLLM high-performance LLM inference
 - NVIDIA CUDA GPU support
 - Prometheus + Grafana + Loki monitoring stack
-- Comprehensive testing and CI/CD
+- Automated testing in CI/CD pipeline
 - Pre-built Docker Hub images
 
 </details>
@@ -50,11 +50,6 @@ Access:
                        └─────────────────┘
 ```
 
-### Core Services
-- Ray Head: Master node for task scheduling and cluster coordination
-- Jobs Runner: Client service for submitting batch inference jobs
-- vLLM Engine: High-performance LLM inference with batching
-
 ### Monitoring (Development)
 - Prometheus: Metrics collection and alerting
 - Grafana: Visualization and dashboards  
@@ -65,16 +60,6 @@ Access:
 
 <details>
 <summary>Usage</summary>
-
-### Submit Batch Jobs
-
-```bash
-# Run default batch inference
-docker compose -f compose.prod.yaml run --rm jobs-runner
-
-# Run custom script
-docker compose -f compose.prod.yaml run --rm jobs-runner python src/your_script.py
-```
 
 ### Ray Jobs API
 
@@ -137,7 +122,7 @@ cfg = vLLMEngineProcessorConfig(
 - Ray cluster resources and task execution
 - vLLM inference throughput and latency  
 - Container resource usage
-- GPU utilization (when available)
+- GPU utilization
 
 ### Dashboards
 - Ray Dashboard: http://localhost:8265
@@ -154,7 +139,7 @@ cfg = vLLMEngineProcessorConfig(
 **Stage 1: Build & Test**
 1. CI/CD builds image from NVIDIA/PyTorch base
 2. Adds Ray 2.49.1 + vLLM 0.10.0 + dependencies  
-3. Runs comprehensive test suite
+3. Runs test suite
 4. Pushes to Docker Hub as version 0.1.1 on success
 
 **Stage 2: Production**
@@ -172,7 +157,7 @@ cfg = vLLMEngineProcessorConfig(
 
 **On Main Branch Push:**
 - All PR checks plus full end-to-end testing
-- Multi-architecture build (amd64/arm64)
+- Multi-architecture build (arm64)
 - Push to Docker Hub with version tags
 
 </details>
@@ -187,15 +172,6 @@ cfg = vLLMEngineProcessorConfig(
 
 </details>
 
-<details>
-<summary>Performance</summary>
-
-- GPU acceleration with CUDA support
-- Optimized batch processing for throughput
-- Memory and CPU resource management
-- Ray object store with spill handling
-
-</details>
 
 <details>
 <summary>Links</summary>
@@ -216,18 +192,3 @@ cfg = vLLMEngineProcessorConfig(
 
 </details>
 
-<details>
-<summary>Contributing</summary>
-
-1. Fork the repository
-2. Create a feature branch
-3. Make changes with tests
-4. Submit a pull request
-
-All contributions are tested via CI/CD before merging.
-
-</details>
-
-## License
-
-MIT License - see LICENSE file for details.
