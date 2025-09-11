@@ -1,0 +1,21 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  # Ray dashboard metrics
+  - job_name: ray
+    static_configs:
+      - targets: ["ray-head:8265"]
+    metrics_path: /metrics  # Ray dashboard exposes Prometheus metrics here
+
+  # vLLM (OpenAI-compatible server or engine) – adjust port if different
+  - job_name: vllm
+    static_configs:
+      - targets: ["haiku:8000"]
+    metrics_path: /metrics
+
+  # Prometheus self
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]

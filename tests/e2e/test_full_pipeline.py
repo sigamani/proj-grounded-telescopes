@@ -24,7 +24,7 @@ from pathlib import Path
 @pytest.fixture(scope="module")
 def docker_compose_stack():
     """Start Docker Compose stack for E2E testing."""
-    compose_file = Path(__file__).parent.parent.parent / "compose.yaml"
+    compose_file = Path(__file__).parent.parent.parent / "compose.dev.yaml"
 
     # Start the stack
     subprocess.run(
