@@ -1,6 +1,7 @@
 """
 Pytest configuration and shared fixtures for Ray + vLLM testing.
 """
+
 import pytest
 import ray
 import os
@@ -27,7 +28,7 @@ def temp_work_dir():
 @pytest.fixture
 def mock_vllm_processor():
     """Mock vLLM processor for unit tests without GPU dependencies."""
-    with patch('ray.data.llm.build_llm_processor') as mock_build:
+    with patch("ray.data.llm.build_llm_processor") as mock_build:
         mock_processor = Mock()
         mock_processor.return_value = Mock()
         mock_build.return_value = mock_processor
@@ -40,24 +41,20 @@ def sample_prompts():
     return [
         {"prompt": "Write a short summary of machine learning."},
         {"prompt": "Explain quantum computing in simple terms."},
-        {"prompt": "What is the future of AI?"}
+        {"prompt": "What is the future of AI?"},
     ]
 
 
 @pytest.fixture
 def expected_response_structure():
     """Expected structure of vLLM responses."""
-    return {
-        "out": str,
-        "prompt": str,
-        "generated_text": str
-    }
+    return {"out": str, "prompt": str, "generated_text": str}
 
 
-@pytest.fixture(scope="session") 
+@pytest.fixture(scope="session")
 def docker_compose_env():
     """Environment variables for docker compose testing."""
     return {
         "RAY_ADDRESS": "ray://localhost:10001",
-        "CUDA_VISIBLE_DEVICES": "0"  # Mock GPU for CI
+        "CUDA_VISIBLE_DEVICES": "0",  # Mock GPU for CI
     }
