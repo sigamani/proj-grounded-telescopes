@@ -219,12 +219,13 @@ jobs:
       with:
         context: .
         file: ./Dockerfile
-        push: false
+        push: true
         load: true
         tags: test-grounded-telescopes:latest
         cache-from: type=gha
         cache-to: type=gha,mode=max
-        platforms: linux/amd64
+        platforms: linux/amd64,linux/arm64
+
     
     - name: Test Docker image
       run: |
