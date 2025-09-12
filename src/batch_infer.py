@@ -1,4 +1,5 @@
 import ray
+from src.kyc_utils import sanitize_kyc_input
 
 
 def create_batch_processor():
@@ -34,14 +35,32 @@ def create_batch_processor():
 
 
 def run_batch_inference():
-    """Run batch inference if called directly."""
+    """Run batch inference with KYC sanitization for one input job."""
     processor = create_batch_processor()
     if processor is None:
         print("Processor not available - skipping inference")
         return
 
-    ds = ray.data.from_items([{"prompt": "Summarise AML PEP-screening risks."}])
+    # Sample KYC data for sanitization
+    sample_kyc_data = {
+        "business_name": "   Acme Financial Services Ltd   ",
+        "address": "  123 Main Street, London, UK  ",
+        "country_code": "gb",
+        "registration_id": "  12345678  ",
+        "website_url": "acmefinance.com",
+        "prompt": "Summarise AML PEP-screening risks."
+    }
+    
+    # Apply KYC sanitization to the input
+    print("Original data:", sample_kyc_data)
+    sanitized_data = sanitize_kyc_input(sample_kyc_data)
+    print("Sanitized data:", sanitized_data)
+    
+    # Create dataset with sanitized data
+    ds = ray.data.from_items([sanitized_data])
     processor(ds).write_json("/tmp/out")
+    
+    print("Batch inference completed with KYC sanitization applied")
 
 
 if __name__ == "__main__":

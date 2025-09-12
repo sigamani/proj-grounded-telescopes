@@ -118,35 +118,22 @@ class KYCResponse(BaseModel):
     """RegTech compliant KYC output specification."""
     verdict: Literal["ACCEPT", "REJECT", "REVIEW"] = Field(description="Final decision")
     
-    # Structured company data
     company_structure: CompanyStructure = Field(description="Company registration and ownership")
     people: List[PersonOfInterest] = Field(description="Associated individuals")
     industry_profile: IndustryProfile = Field(description="Business sector analysis")
     online_presence: OnlinePresence = Field(description="Digital footprint")
     
-    # Risk assessment
     risk_assessment: RiskAssessment = Field(description="Comprehensive risk evaluation")
     
-    # Due diligence report
     dd_investigation: DDInvestigation = Field(description="Investigation methodology and findings")
     compliance_validation: ComplianceValidation = Field(description="Compliance review results")
     
-    # Processing metadata
     processing_time_seconds: float = Field(description="Total processing duration")
     confidence_score: float = Field(description="Overall confidence in results", ge=0.0, le=1.0)
 
 
 # Ray.data Preprocessing Functions
 def sanitize_kyc_input(row: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Sanitize and validate KYC input data for processing.
-    
-    Args:
-        row: Raw KYC input data
-        
-    Returns:
-        Sanitized data ready for LLM processing
-    """
     try:
         # Extract and sanitize core fields
         sanitized = {
@@ -169,7 +156,9 @@ def sanitize_kyc_input(row: Dict[str, Any]) -> Dict[str, Any]:
             sanitized["validation_status"] = "FAILED"
             return sanitized
             
-        if len(sanitized["country_code"]) != 2 or not sanitized["country_code"].isalpha():
+        # Check original country code before truncation
+        original_country = str(row.get("country_code", "")).strip()
+        if len(original_country) != 2 or not original_country.isalpha():
             sanitized["validation_errors"] = ["country_code must be valid ISO2 format"]
             sanitized["validation_status"] = "FAILED" 
             return sanitized
@@ -566,7 +555,7 @@ def parse_kyc_response(result_dict: Dict[str, Any]) -> KYCResponse:
                 pii_sanitization_status="Applied during preprocessing"
             ),
             processing_time_seconds=result_dict.get("total_processing_time", 0.0),
-            confidence_score=0.5  # Default medium confidence
+            confidence_score=0.5  
         )
         
     except Exception as e:
