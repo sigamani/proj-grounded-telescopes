@@ -1,125 +1,118 @@
-version: "3.9"
-
 services:
   ray-head:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: ray-head
+    build: .
+    container_name: ray-head-dev
     command: >
       ray start --head
         --dashboard-host=0.0.0.0
         --port=6379
         --dashboard-port=8265
+        --temp-dir=/tmp/ray
         --block
     ports:
-      - "6379:6379"    # Ray client (optional)
+      - "6379:6379"    # Ray client
       - "8265:8265"    # Ray Dashboard + Jobs REST API
+      - "8080:8080"    # Ray metrics
       - "10001:10001"  # Ray client/worker RPC
     volumes:
       - ./:/app
-      - ray-data:/tmp/ray           # spill/session
+    tmpfs:
+      - /tmp/ray:rw,noexec,nosuid,size=1g
     environment:
       - RAY_ADDRESS=auto
     deploy:
       resources:
         reservations:
           devices:
-            - capabilities: ["gpu"]  # enable GPUs in Compose
+            - capabilities: ["gpu"]
     ipc: host
     ulimits:
       memlock: -1
       stack: 67108864
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8265 || exit 1"]
+      test: ["CMD-SHELL", "ray status || exit 1"]
       interval: 10s
-      timeout: 3s
-      retries: 10
-    networks:
-      - ray-network
+      timeout: 5s
+      retries: 3
 
-  # Optional: a thin runner you can `docker compose run --rm jobs-runner ...`
-  jobs-runner:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  vllm:
+    build: .
+    container_name: vllm-dev
     depends_on:
       ray-head:
         condition: service_healthy
-    environment:
-      - RAY_ADDRESS=ray://ray-head:10001
-    working_dir: /app
-    entrypoint: ["bash", "-lc"]
-    command: >
-      "python src/batch_infer.py"   # updated path
+    ports:
+      - "8000:8000"    # vLLM API
     volumes:
       - ./:/app
-    networks:
-      - ray-network
+    environment:
+      - RAY_ADDRESS=ray://ray-head:10001
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: ["gpu"]
+    command: >
+      python -m vllm.entrypoints.openai.api_server
+        --model microsoft/DialoGPT-medium
+        --host 0.0.0.0
+        --port 8000
 
-  # Monitoring stack
   prometheus:
     image: prom/prometheus:latest
-    container_name: prometheus
-    ports:
+    container_name: prometheus-dev
+    ports: 
       - "9090:9090"
     volumes:
-      - ./monitoring/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yml
+      - ./monitoring/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'
-      - '--web.enable-lifecycle'
-    networks:
-      - ray-network
-
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    volumes:
-      - ./monitoring/grafana:/etc/grafana/provisioning
-      - grafana-data:/var/lib/grafana
-    networks:
-      - ray-network
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    depends_on:
+      - ray-head
+      - vllm
 
   loki:
     image: grafana/loki:latest
-    container_name: loki
-    ports:
+    container_name: loki-dev
+    ports: 
       - "3100:3100"
     volumes:
-      - ./monitoring/loki/config.yaml:/etc/loki/local-config.yaml
-      - loki-data:/tmp/loki
+      - ./monitoring/loki/config.yaml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
     command: -config.file=/etc/loki/local-config.yaml
-    networks:
-      - ray-network
 
   promtail:
     image: grafana/promtail:latest
-    container_name: promtail
+    container_name: promtail-dev
     volumes:
       - /var/log:/var/log:ro
-      - ./monitoring/pomtail/config.yaml:/etc/promtail/config.yml
+      - ./monitoring/promtail/config.yaml:/etc/promtail/config.yml:ro
     command: -config.file=/etc/promtail/config.yml
-    networks:
-      - ray-network
+    depends_on:
+      - loki
 
-networks:
-  ray-network:
-    driver: bridge
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana-dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+      - loki
 
 volumes:
   ray-data:
     driver: local
   prometheus-data:
     driver: local
-  grafana-data:
-    driver: local
   loki-data:
+    driver: local
+  grafana-data:
     driver: local

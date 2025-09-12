@@ -48,7 +48,22 @@ services:
       "python submit_job.py"   # e.g., client that calls Jobs API; replace as needed
     volumes:
       - ./:/app
+scrape_configs:
+  # Ray head metrics (NOT the dashboard)
+  - job_name: ray
+    static_configs:
+      - targets: ["ray-head:8080"]
 
+  # vLLM (OpenAI-compatible server)
+  - job_name: vllm
+    static_configs:
+      - targets: ["haiku:8000"]
+    metrics_path: /metrics
+
+  # Prometheus self
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
 volumes:
   ray-data:
     driver: local
