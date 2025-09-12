@@ -1,7 +1,7 @@
 """
 KYC Utilities Module for Ray + vLLM Pipeline
 
-RegTech-compliant KYC processing with Ray.data preprocessing, 
+RegTech-compliant KYC processing with Ray.data preprocessing,
 LLM inference, and compliance guardrail validation.
 """
 
@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 # Input Models
 class DocumentBlob(BaseModel):
     """Document attachment for KYC verification."""
+
     filename: str = Field(description="Original filename")
     content_type: str = Field(description="MIME type")
     content: str = Field(description="Base64 encoded document content")
@@ -28,60 +29,94 @@ class DocumentBlob(BaseModel):
 
 class KYCRequest(BaseModel):
     """RegTech compliant KYC input specification."""
+
     business_name: str = Field(description="Legal business name", min_length=1)
     address: str = Field(description="Registered business address", min_length=1)
     country_code: str = Field(description="ISO2 country code", pattern=r"^[A-Z]{2}$")
-    registration_id: Optional[str] = Field(None, description="Company registration number")
+    registration_id: Optional[str] = Field(
+        None, description="Company registration number"
+    )
     website_url: Optional[HttpUrl] = Field(None, description="Official website URL")
-    documents: Optional[List[DocumentBlob]] = Field(None, description="Supporting documents")
+    documents: Optional[List[DocumentBlob]] = Field(
+        None, description="Supporting documents"
+    )
 
 
-# Output Models  
+# Output Models
 class PersonOfInterest(BaseModel):
     """Individual associated with the business."""
+
     name: str = Field(description="Full name")
     role: str = Field(description="Position/relationship to business")
     nationality: Optional[str] = Field(None, description="Nationality if known")
     pep_status: bool = Field(False, description="Politically Exposed Person indicator")
     sanctions_match: bool = Field(False, description="Sanctions screening match")
-    risk_indicators: List[str] = Field(default_factory=list, description="Individual risk flags")
+    risk_indicators: List[str] = Field(
+        default_factory=list, description="Individual risk flags"
+    )
 
 
 class CompanyStructure(BaseModel):
     """Company registration and ownership details."""
+
     legal_name: str = Field(description="Official registered name")
-    registration_number: Optional[str] = Field(None, description="Company registration ID")
+    registration_number: Optional[str] = Field(
+        None, description="Company registration ID"
+    )
     incorporation_date: Optional[str] = Field(None, description="Date of incorporation")
     legal_form: Optional[str] = Field(None, description="Company legal structure")
     registered_address: str = Field(description="Official registered address")
-    operating_addresses: List[str] = Field(default_factory=list, description="Operational locations")
+    operating_addresses: List[str] = Field(
+        default_factory=list, description="Operational locations"
+    )
     share_capital: Optional[str] = Field(None, description="Authorized/issued capital")
-    directors: List[PersonOfInterest] = Field(default_factory=list, description="Company directors")
-    shareholders: List[PersonOfInterest] = Field(default_factory=list, description="Known shareholders")
-    ultimate_beneficial_owners: List[PersonOfInterest] = Field(default_factory=list, description="UBOs (>25%)")
+    directors: List[PersonOfInterest] = Field(
+        default_factory=list, description="Company directors"
+    )
+    shareholders: List[PersonOfInterest] = Field(
+        default_factory=list, description="Known shareholders"
+    )
+    ultimate_beneficial_owners: List[PersonOfInterest] = Field(
+        default_factory=list, description="UBOs (>25%)"
+    )
 
 
 class IndustryProfile(BaseModel):
     """Business sector and activity analysis."""
+
     primary_industry: str = Field(description="Main business sector")
-    sic_codes: List[str] = Field(default_factory=list, description="Standard Industrial Classification codes")
+    sic_codes: List[str] = Field(
+        default_factory=list, description="Standard Industrial Classification codes"
+    )
     business_description: str = Field(description="Nature of business activities")
     risk_sector: bool = Field(False, description="High-risk industry indicator")
-    regulatory_licenses: List[str] = Field(default_factory=list, description="Required licenses/permits")
+    regulatory_licenses: List[str] = Field(
+        default_factory=list, description="Required licenses/permits"
+    )
 
 
 class OnlinePresence(BaseModel):
     """Digital footprint and web presence."""
+
     website_status: str = Field(description="Website accessibility and status")
-    domain_registration: Optional[str] = Field(None, description="Domain registration details")
-    social_media: List[str] = Field(default_factory=list, description="Social media profiles")
+    domain_registration: Optional[str] = Field(
+        None, description="Domain registration details"
+    )
+    social_media: List[str] = Field(
+        default_factory=list, description="Social media profiles"
+    )
     online_reviews: Optional[str] = Field(None, description="Customer reviews summary")
-    digital_risk_indicators: List[str] = Field(default_factory=list, description="Online risk flags")
+    digital_risk_indicators: List[str] = Field(
+        default_factory=list, description="Online risk flags"
+    )
 
 
 class RiskAssessment(BaseModel):
     """Comprehensive risk evaluation."""
-    overall_risk_score: Literal["Low", "Medium", "High"] = Field(description="Aggregated risk level")
+
+    overall_risk_score: Literal["Low", "Medium", "High"] = Field(
+        description="Aggregated risk level"
+    )
     risk_factors: List[str] = Field(description="Identified risk indicators")
     sanctions_screening: str = Field(description="Sanctions check results")
     pep_exposure: str = Field(description="PEP screening results")
@@ -92,8 +127,11 @@ class RiskAssessment(BaseModel):
 
 class DDInvestigation(BaseModel):
     """Customer Due Diligence investigation details."""
+
     investigation_date: str = Field(description="Investigation timestamp")
-    data_sources: List[str] = Field(description="Sources consulted during investigation")
+    data_sources: List[str] = Field(
+        description="Sources consulted during investigation"
+    )
     verification_methods: List[str] = Field(description="Verification techniques used")
     findings_summary: str = Field(description="Key investigation findings")
     gaps_identified: List[str] = Field(description="Information gaps or limitations")
@@ -105,31 +143,47 @@ class DDInvestigation(BaseModel):
 
 class ComplianceValidation(BaseModel):
     """Compliance officer validation results."""
+
     reviewer_assessment: str = Field(description="Compliance officer review summary")
-    data_quality_score: Literal["Poor", "Fair", "Good", "Excellent"] = Field(description="Investigation quality rating")
+    data_quality_score: Literal["Poor", "Fair", "Good", "Excellent"] = Field(
+        description="Investigation quality rating"
+    )
     regulatory_compliance: str = Field(description="Regulatory requirement adherence")
     escalation_required: bool = Field(description="Whether case needs escalation")
-    approval_conditions: List[str] = Field(default_factory=list, description="Conditions for approval")
-    monitoring_requirements: str = Field(description="Ongoing monitoring recommendations")
+    approval_conditions: List[str] = Field(
+        default_factory=list, description="Conditions for approval"
+    )
+    monitoring_requirements: str = Field(
+        description="Ongoing monitoring recommendations"
+    )
     pii_sanitization_status: str = Field(description="PII handling compliance")
 
 
 class KYCResponse(BaseModel):
     """RegTech compliant KYC output specification."""
+
     verdict: Literal["ACCEPT", "REJECT", "REVIEW"] = Field(description="Final decision")
-    
-    company_structure: CompanyStructure = Field(description="Company registration and ownership")
+
+    company_structure: CompanyStructure = Field(
+        description="Company registration and ownership"
+    )
     people: List[PersonOfInterest] = Field(description="Associated individuals")
     industry_profile: IndustryProfile = Field(description="Business sector analysis")
     online_presence: OnlinePresence = Field(description="Digital footprint")
-    
+
     risk_assessment: RiskAssessment = Field(description="Comprehensive risk evaluation")
-    
-    dd_investigation: DDInvestigation = Field(description="Investigation methodology and findings")
-    compliance_validation: ComplianceValidation = Field(description="Compliance review results")
-    
+
+    dd_investigation: DDInvestigation = Field(
+        description="Investigation methodology and findings"
+    )
+    compliance_validation: ComplianceValidation = Field(
+        description="Compliance review results"
+    )
+
     processing_time_seconds: float = Field(description="Total processing duration")
-    confidence_score: float = Field(description="Overall confidence in results", ge=0.0, le=1.0)
+    confidence_score: float = Field(
+        description="Overall confidence in results", ge=0.0, le=1.0
+    )
 
 
 # Ray.data Preprocessing Functions
@@ -144,55 +198,55 @@ def sanitize_kyc_input(row: Dict[str, Any]) -> Dict[str, Any]:
             "website_url": str(row.get("website_url", "") or "").strip(),
             "processing_timestamp": datetime.now().isoformat(),
         }
-        
+
         # Validate required fields
         if not sanitized["business_name"] or len(sanitized["business_name"]) < 1:
             sanitized["validation_errors"] = ["business_name required and non-empty"]
             sanitized["validation_status"] = "FAILED"
             return sanitized
-            
+
         if not sanitized["address"] or len(sanitized["address"]) < 1:
-            sanitized["validation_errors"] = ["address required and non-empty"] 
+            sanitized["validation_errors"] = ["address required and non-empty"]
             sanitized["validation_status"] = "FAILED"
             return sanitized
-            
+
         # Check original country code before truncation
         original_country = str(row.get("country_code", "")).strip()
         if len(original_country) != 2 or not original_country.isalpha():
             sanitized["validation_errors"] = ["country_code must be valid ISO2 format"]
-            sanitized["validation_status"] = "FAILED" 
+            sanitized["validation_status"] = "FAILED"
             return sanitized
-        
+
         # Handle optional fields
         if sanitized["website_url"]:
             # Basic URL sanitization
             if not sanitized["website_url"].startswith(("http://", "https://")):
                 sanitized["website_url"] = "https://" + sanitized["website_url"]
-        
+
         # Add metadata for tracking
         sanitized["sanitization_applied"] = True
         sanitized["validation_status"] = "PASSED"
         sanitized["pii_scrubbing_status"] = "APPLIED"
-        
+
         return sanitized
-        
+
     except Exception as e:
         logger.error(f"Sanitization failed: {str(e)}")
         return {
             "business_name": "",
             "validation_status": "ERROR",
             "validation_errors": [f"Sanitization error: {str(e)}"],
-            "processing_timestamp": datetime.now().isoformat()
+            "processing_timestamp": datetime.now().isoformat(),
         }
 
 
 def create_kyc_analysis_prompt(row: Dict[str, Any]) -> Dict[str, Any]:
     """
     Create LLM analysis prompt for KYC investigation.
-    
+
     Args:
         row: Sanitized KYC input data
-        
+
     Returns:
         LLM prompt configuration
     """
@@ -200,9 +254,9 @@ def create_kyc_analysis_prompt(row: Dict[str, Any]) -> Dict[str, Any]:
         return {
             "messages": [{"role": "user", "content": "Invalid input data"}],
             "sampling_params": {"temperature": 0.0, "max_tokens": 100},
-            "skip_processing": True
+            "skip_processing": True,
         }
-    
+
     # Build comprehensive KYC analysis prompt
     prompt = f"""You are a KYC analyst conducting a comprehensive background check. Investigate and provide a structured JSON report for:
 
@@ -255,25 +309,28 @@ Ensure all JSON is valid and complete."""
 
     return {
         "messages": [
-            {"role": "system", "content": "You are a KYC compliance analyst. Respond only with valid JSON."},
-            {"role": "user", "content": prompt}
+            {
+                "role": "system",
+                "content": "You are a KYC compliance analyst. Respond only with valid JSON.",
+            },
+            {"role": "user", "content": prompt},
         ],
         "sampling_params": {
             "temperature": 0.1,  # Low temperature for factual analysis
             "max_tokens": 2000,  # Sufficient tokens for comprehensive analysis
-            "top_p": 0.9
+            "top_p": 0.9,
         },
-        "original_input": row
+        "original_input": row,
     }
 
 
 def create_compliance_validation_prompt(row: Dict[str, Any]) -> Dict[str, Any]:
     """
     Create compliance officer validation prompt.
-    
+
     Args:
         row: LLM analysis results with original input
-        
+
     Returns:
         Compliance validation prompt configuration
     """
@@ -281,12 +338,12 @@ def create_compliance_validation_prompt(row: Dict[str, Any]) -> Dict[str, Any]:
         return {
             "messages": [{"role": "user", "content": "Skipping compliance validation"}],
             "sampling_params": {"temperature": 0.0, "max_tokens": 50},
-            "skip_processing": True
+            "skip_processing": True,
         }
-    
+
     original_input = row.get("original_input", {})
     llm_analysis = row.get("generated_text", "")
-    
+
     prompt = f"""You are Head of Compliance reviewing this KYC investigation. Validate findings and ensure RegTech compliance.
 
 Original Request:
@@ -327,22 +384,25 @@ Focus on regulatory compliance, PII protection, and data quality assessment."""
 
     return {
         "messages": [
-            {"role": "system", "content": "You are Head of Compliance. Respond only with valid JSON for regulatory compliance."},
-            {"role": "user", "content": prompt}
+            {
+                "role": "system",
+                "content": "You are Head of Compliance. Respond only with valid JSON for regulatory compliance.",
+            },
+            {"role": "user", "content": prompt},
         ],
         "sampling_params": {
             "temperature": 0.05,  # Very low temperature for compliance assessment
             "max_tokens": 1500,
-            "top_p": 0.8
+            "top_p": 0.8,
         },
-        "original_analysis": row
+        "original_analysis": row,
     }
 
 
 def create_kyc_processor():
     """
     Create Ray.data processor for KYC pipeline using existing vLLM architecture.
-    
+
     Returns:
         Ray.data processor configured for KYC analysis
     """
@@ -372,12 +432,12 @@ def create_kyc_processor():
             "processing_metadata": {
                 "model": "microsoft/DialoGPT-medium",
                 "timestamp": datetime.now().isoformat(),
-                "processing_stage": "initial_analysis"
+                "processing_stage": "initial_analysis",
             },
-            **row
-        }
+            **row,
+        },
     )
-    
+
     logger.info("KYC processor created successfully")
     return processor
 
@@ -385,7 +445,7 @@ def create_kyc_processor():
 def create_compliance_processor():
     """
     Create Ray.data processor for compliance validation stage.
-    
+
     Returns:
         Ray.data processor configured for compliance validation
     """
@@ -415,12 +475,12 @@ def create_compliance_processor():
             "processing_metadata": {
                 "model": "microsoft/DialoGPT-medium",
                 "timestamp": datetime.now().isoformat(),
-                "processing_stage": "compliance_validation"
+                "processing_stage": "compliance_validation",
             },
-            **row
-        }
+            **row,
+        },
     )
-    
+
     logger.info("Compliance validation processor created successfully")
     return processor
 
@@ -428,56 +488,56 @@ def create_compliance_processor():
 def process_kyc_batch(requests: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
     Process batch of KYC requests through complete Ray.data pipeline.
-    
+
     Args:
         requests: List of KYC request dictionaries
-        
+
     Returns:
         List of processed KYC results
     """
     start_time = datetime.now()
-    
+
     try:
         # Ensure Ray is initialized
         if not ray.is_initialized():
             ray.init(ignore_reinit_error=True)
-        
+
         logger.info(f"Starting KYC batch processing for {len(requests)} requests")
-        
+
         # Stage 1: Data sanitization and preprocessing
         logger.info("Stage 1: Data sanitization")
         ds = ray.data.from_items(requests)
         sanitized_ds = ds.map(sanitize_kyc_input)
-        
+
         # Stage 2: Initial KYC analysis
         logger.info("Stage 2: Initial KYC analysis")
         kyc_processor = create_kyc_processor()
         if kyc_processor is None:
             raise RuntimeError("KYC processor not available")
-            
+
         analyzed_ds = kyc_processor(sanitized_ds)
-        
+
         # Stage 3: Compliance validation
         logger.info("Stage 3: Compliance validation")
         compliance_processor = create_compliance_processor()
         if compliance_processor is None:
             raise RuntimeError("Compliance processor not available")
-            
+
         validated_ds = compliance_processor(analyzed_ds)
-        
+
         # Collect results
         results = validated_ds.take_all()
         processing_time = (datetime.now() - start_time).total_seconds()
-        
+
         logger.info(f"KYC batch processing completed in {processing_time:.2f}s")
-        
+
         # Add processing metadata to all results
         for result in results:
             result["total_processing_time"] = processing_time
             result["batch_size"] = len(requests)
-            
+
         return results
-        
+
     except Exception as e:
         logger.error(f"KYC batch processing failed: {str(e)}")
         raise RuntimeError(f"KYC processing failed: {str(e)}")
@@ -486,13 +546,13 @@ def process_kyc_batch(requests: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 def validate_kyc_request(request_dict: Dict[str, Any]) -> KYCRequest:
     """
     Validate and parse KYC request using Pydantic models.
-    
+
     Args:
         request_dict: Raw request dictionary
-        
+
     Returns:
         Validated KYCRequest model
-        
+
     Raises:
         ValidationError: If request validation fails
     """
@@ -502,10 +562,10 @@ def validate_kyc_request(request_dict: Dict[str, Any]) -> KYCRequest:
 def parse_kyc_response(result_dict: Dict[str, Any]) -> KYCResponse:
     """
     Parse and validate KYC processing results into response model.
-    
+
     Args:
         result_dict: Raw processing results
-        
+
     Returns:
         Validated KYCResponse model
     """
@@ -516,16 +576,13 @@ def parse_kyc_response(result_dict: Dict[str, Any]) -> KYCResponse:
             verdict="REVIEW",  # Default to review for safety
             company_structure=CompanyStructure(
                 legal_name=result_dict.get("business_name", "Unknown"),
-                registered_address=result_dict.get("address", "Unknown")
+                registered_address=result_dict.get("address", "Unknown"),
             ),
             people=[],
             industry_profile=IndustryProfile(
-                primary_industry="Unknown",
-                business_description="Analysis in progress"
+                primary_industry="Unknown", business_description="Analysis in progress"
             ),
-            online_presence=OnlinePresence(
-                website_status="Unknown"
-            ),
+            online_presence=OnlinePresence(website_status="Unknown"),
             risk_assessment=RiskAssessment(
                 overall_risk_score="Medium",
                 risk_factors=["Processing incomplete"],
@@ -533,7 +590,7 @@ def parse_kyc_response(result_dict: Dict[str, Any]) -> KYCResponse:
                 pep_exposure="In progress",
                 adverse_media="In progress",
                 geographic_risk="Assessment pending",
-                industry_risk="Assessment pending"
+                industry_risk="Assessment pending",
             ),
             dd_investigation=DDInvestigation(
                 investigation_date=datetime.now().isoformat(),
@@ -544,7 +601,7 @@ def parse_kyc_response(result_dict: Dict[str, Any]) -> KYCResponse:
                 red_flags=[],
                 mitigating_factors=[],
                 next_steps=["Parse and structure LLM outputs"],
-                analyst_notes="Results require post-processing"
+                analyst_notes="Results require post-processing",
             ),
             compliance_validation=ComplianceValidation(
                 reviewer_assessment="Automated compliance validation applied",
@@ -552,12 +609,12 @@ def parse_kyc_response(result_dict: Dict[str, Any]) -> KYCResponse:
                 regulatory_compliance="Pipeline validation applied",
                 escalation_required=True,
                 monitoring_requirements="Standard monitoring",
-                pii_sanitization_status="Applied during preprocessing"
+                pii_sanitization_status="Applied during preprocessing",
             ),
             processing_time_seconds=result_dict.get("total_processing_time", 0.0),
-            confidence_score=0.5  
+            confidence_score=0.5,
         )
-        
+
     except Exception as e:
         logger.error(f"Response parsing failed: {str(e)}")
         raise ValidationError(f"Failed to parse KYC response: {str(e)}")

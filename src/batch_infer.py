@@ -48,18 +48,18 @@ def run_batch_inference():
         "country_code": "gb",
         "registration_id": "  12345678  ",
         "website_url": "acmefinance.com",
-        "prompt": "Summarise AML PEP-screening risks."
+        "prompt": "Summarise AML PEP-screening risks.",
     }
-    
+
     # Apply KYC sanitization to the input
     print("Original data:", sample_kyc_data)
     sanitized_data = sanitize_kyc_input(sample_kyc_data)
     print("Sanitized data:", sanitized_data)
-    
+
     # Create dataset with sanitized data
     ds = ray.data.from_items([sanitized_data])
     processor(ds).write_json("/tmp/out")
-    
+
     print("Batch inference completed with KYC sanitization applied")
 
 

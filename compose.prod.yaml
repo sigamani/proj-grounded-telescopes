@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   ray-head:
-    image: michaelsigamani/proj-grounded-telescopes:0.1.1
+    image: proj-grounded-telescopes:local
     container_name: ray-head
     command: >
       ray start --head
@@ -33,10 +33,12 @@ services:
       interval: 10s
       timeout: 3s
       retries: 10
+    networks:
+      - ray-network
 
   # Optional: a thin runner you can `docker compose run --rm jobs-runner ...`
   jobs-runner:
-    image: michaelsigamani/proj-grounded-telescopes:0.1.1
+    image: proj-grounded-telescopes:local
     depends_on:
       ray-head:
         condition: service_healthy
@@ -45,10 +47,100 @@ services:
     working_dir: /app
     entrypoint: ["bash","-lc"]
     command: >
-      "python submit_job.py"   # e.g., client that calls Jobs API; replace as needed
+      "python src/batch_infer.py"   # updated path
     volumes:
       - ./:/app
+    networks:
+      - ray-network
+
+  # Monitoring stack
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"    # Prometheus Web UI
+    volumes:
+      - ./monitoring/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--web.external-url=http://localhost:9090'
+    networks:
+      - ray-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:9090/-/healthy || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"    # Grafana Web UI
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - grafana-data:/var/lib/grafana
+    networks:
+      - ray-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      prometheus:
+        condition: service_healthy
+
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    ports:
+      - "3100:3100"    # Loki API
+    volumes:
+      - ./monitoring/loki/config.yaml:/etc/loki/local-config.yaml
+      - loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - ray-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3100/ready || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: promtail
+    volumes:
+      - /var/log:/var/log:ro
+      - ./monitoring/promtail/config.yaml:/etc/promtail/config.yml
+      - ray-data:/tmp/ray:ro          # Mount Ray logs
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - ray-network
+    depends_on:
+      loki:
+        condition: service_healthy
+
+networks:
+  ray-network:
+    driver: bridge
 
 volumes:
   ray-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+  loki-data:
     driver: local

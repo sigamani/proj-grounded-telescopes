@@ -1,26 +1,42 @@
-FROM nvcr.io/nvidia/pytorch:24.06-py3 
+FROM python:3.11-slim
 
-# Set working directory
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Ray and core dependencies
+RUN pip install --no-cache-dir \
+    "ray[data]==2.49.1" \
+    "vllm==0.10.0" \
+    "torch>=2.0.0" \
+    "pydantic>=2.6,<3" \
+    "pyarrow>=12,<16" \
+    "huggingface_hub>=0.33.0" \
+    "datasets==2.21.0" \
+    "openai>=1.42.0" \
+    "tqdm>=4.66.5"
+
+# Create app directory
 WORKDIR /app
 
-# Copy requirements first for better caching
-COPY requirements.txt .
+# Copy application files
+COPY src/ /app/src/
+COPY requirements.txt /app/
 
-# Install python packages from requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt && \
-    pip cache purge && \
-    rm -rf ~/.cache/pip && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# Copy project files to the container
-COPY . /app/
+# Expose ports
+EXPOSE 6379
+EXPOSE 8265
+EXPOSE 10001
+EXPOSE 8000
+EXPOSE 8888
 
 # Set environment variables
+ENV PYTHONPATH=/app
+ENV RAY_DISABLE_IMPORT_WARNING=1
 ENV RAY_ADDRESS=auto
-
-# Expose Ray ports
-EXPOSE 6379 8265 10001 8000 8888
 
 # Default command
 CMD ["ray", "start", "--head", "--dashboard-host=0.0.0.0", "--port=6379", "--dashboard-port=8265", "--block"] 
