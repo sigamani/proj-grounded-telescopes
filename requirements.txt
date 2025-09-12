@@ -1,6 +1,6 @@
 # Core Ray and vLLM dependencies  
 ray[data]==2.49.1
-vllm==0.10.0
+vllm>=0.8.0  # Updated to available version
 torch>=2.0.0
 pydantic>=2.6,<3
 pyarrow>=12,<16
@@ -11,6 +11,9 @@ datasets==2.21.0
 
 # API clients
 openai>=1.42.0
+
+# KYC and evaluation dependencies
+weave>=0.50.0
 
 # Utilities
 tqdm>=4.66.5
