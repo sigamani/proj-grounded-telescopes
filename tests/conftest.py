@@ -18,7 +18,11 @@ def ray_cluster():
         yield None
     finally:
         if ray.is_initialized():
-            ray.shutdown()
+            try:
+                ray.shutdown()
+            except ImportError:
+                # Handle Ray shutdown circular import issue in tests
+                pass
 
 
 @pytest.fixture
