@@ -3,7 +3,7 @@
 set -e
 
 echo "Starting Ray Head..."
-ray start --head --port=6379 --dashboard-host=0.0.0.0 --dashboard-port=8265
+ray start --head --port=6379 --dashboard-host=0.0.0.0 --dashboard-port=8265 --temp-dir=/tmp/ray
 
 echo "Waiting for Ray to be ready..."
 sleep 5
