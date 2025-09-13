@@ -6,13 +6,14 @@ import tempfile
 from unittest.mock import Mock, patch
 
 import pytest
-
 import ray
 
 
 @pytest.fixture(scope="session")
 def ray_cluster():
     """Initialize a local Ray cluster for testing."""
+    if not ray.is_initialized():
+        ray.init(ignore_reinit_error=True, num_cpus=1, object_store_memory=100_000_000)
     try:
         yield None
     finally:

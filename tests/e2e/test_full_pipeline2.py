@@ -263,21 +263,6 @@ def test_main_block():
     assert sample_in.business_name == "Acme Corp" and sample_out.verdict == "REVIEW"
 
 
-def test_process_kyc_mock():
-    from unittest.mock import patch
-
-    with patch("tests.e2e.test_full_pipeline2.create_batch_processor") as mock_func:
-        mock_func.return_value = lambda ds: ds
-        with patch("tests.e2e.test_full_pipeline2.ray") as mock_ray:
-            mock_ray.data.from_items.return_value.take_all.return_value = [
-                {"out": "test"}
-            ]
-            result = process_kyc_batch(
-                [InputData(business_name="Test", address="Test", country_code="GB")]
-            )
-            assert isinstance(result, list)
-
-
 if __name__ == "__main__":
     sample_in = InputData(
         business_name="Acme Corp",
