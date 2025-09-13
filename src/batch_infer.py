@@ -8,9 +8,7 @@ import requests
 class VLLMAPIProcessor:
     """Ray actor for processing requests via VLLM HTTP API."""
 
-    def __init__(
-        self, api_url: str = "http://localhost:8000/v1/chat/completions"
-    ):
+    def __init__(self, api_url: str = "http://localhost:8000/v1/chat/completions"):
         self.api_url = api_url
         self.headers = {"Content-Type": "application/json"}
 
@@ -88,9 +86,7 @@ def run_batch_inference():
         print("Processor not available - skipping inference")
         return
 
-    ds = ray.data.from_items(
-        [{"prompt": "Summarise AML PEP-screening risks."}]
-    )
+    ds = ray.data.from_items([{"prompt": "Summarise AML PEP-screening risks."}])
     with tempfile.TemporaryDirectory() as temp_dir:
         output_path = f"{temp_dir}/out"
         processor(ds).write_json(output_path)
