@@ -6,7 +6,6 @@ services:
     container_name: ray-head
     # vLLM + Ray are started by start.sh
     ports:
-      ports:
       - "127.0.0.1:8000:8000"   # vLLM
       - "127.0.0.1:8265:8265"   # Ray dashboard
       - "127.0.0.1:8080:8080"   # Ray metrics
@@ -62,3 +61,6 @@ services:
 networks:
   ray-network:
     driver: bridge
+
+volumes:
+  ray-data:

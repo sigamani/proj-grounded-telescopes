@@ -16,8 +16,7 @@ COPY . /app/
 
 # Set environment variables
 
-COPY start.sh /app/start.sh
-RUN chmod +x /app/start.sh
+COPY --chmod=755 start.sh /app/start.sh
 
 # Useful env
 ENV HF_HUB_ENABLE_HF_TRANSFER=1
