@@ -1,194 +1,73 @@
-# Automated KYC using GraphRAG & Ray
+# KYC Compliance Automation - GenAI Agent Architecture
 
-[![CI Pipeline]([https://github.com/michaelsigamani/proj-grounded-telescopes/actions/workflows/ci.yml/badge.svg)](https://github.com/sigamani/proj-grounded-telescopes/blob/main/.github/workflows/ci.yml))
-[![Docker Hub](https://img.shields.io/docker/pulls/michaelsigamani/proj-grounded-telescopes)](https://hub.docker.com/r/michaelsigamani/proj-grounded-telescopes)
+## System Design Philosophy
 
-Production AI inference pipeline built on Ray + vLLM with monitoring and testing.
+### Non-Functional Requirements Traceability
+- **Human Process Fidelity**: Data flow must mirror human KYC officer dependency chain (identity → risk assessment → screening → investigation → documentation)
+- **Chain of Custody**: Each step maps directly to human KYC officer activities, making audit trails intuitive for regulators and stakeholders
+- **Process Transparency**: Stakeholders can understand AI decisions because they follow familiar human workflows
 
-## Quick Start
+### Explainability Priority
+- **Natural Language Reasoning** > **Algorithmic Complexity**: A GenAI system that says "Found potential match for 'Mohammad Smith' considering common spelling variations" is infinitely more explainable than a black-box Levenshtein distance algorithm with 20 years of accumulated edge-case rules
+- **Human-Readable Logic**: Prompts that mirror human thought processes ("Does this person appear on sanctions lists?") vs. cryptic algorithmic thresholds
+- **Contextual Understanding**: GenAI can explain *why* it flagged something in plain language, not just *that* it was flagged
 
-### Development
-```bash
-docker compose -f compose.dev.yaml up --build
-```
+### Transformative Architecture Imperative
+- **GenAI-Native Design**: Build architectures that leverage GenAI's reasoning, context understanding, and natural language capabilities from the ground up
+- **Anti-Pattern**: OpenAI wrapper functions bolted onto legacy ETL pipelines (30 Lambda step functions triggered by Glue) = using smartphones only for phone calls
+- **Transformative Patterns**: Ray clusters with vLLM for distributed reasoning, GraphRAG for contextual knowledge synthesis, agent-based workflows that mirror human cognitive patterns
 
-### Production
-```bash
-docker compose -f compose.prod.yaml up
-```
-
-Access:
-- Ray Dashboard: http://localhost:8265
-- Prometheus: http://localhost:9090 (dev only)
-- Grafana: http://localhost:3000 (dev only)
-
-<details>
-<summary>Features</summary>
-
-- Ray cluster distributed computing
-- vLLM high-performance LLM inference
-- NVIDIA CUDA GPU support
-- Prometheus + Grafana + Loki monitoring stack
-- Automated testing in CI/CD pipeline
-- Pre-built Docker Hub images
-
-</details>
-
-<details>
-<summary>Architecture</summary>
+## Skeleton Architecture Pattern
 
 ```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Client/API    │───▶│   Ray Head Node   │───▶│ vLLM Inference  │
-│                 │    │  (Scheduler)      │    │   Workers       │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                    KYC COMPLIANCE AGENT PIPELINE                │
+│                   (Human Process Fidelity)                     │
+└─────────────────────────────────────────────────────────────────┘
                                 │
-                       ┌────────┴────────┐
-                       │   Monitoring    │
-                       │ (Prometheus/    │
-                       │  Grafana/Loki)  │
-                       └─────────────────┘
+                ┌───────────────┴───────────────┐
+                │                               │
+         ┌──────▼──────┐                ┌──────▼──────┐
+         │ Identity    │                │ Risk        │
+         │ Verification│◄──────────────►│ Assessment  │
+         │ Agent       │                │ Agent       │
+         └──────┬──────┘                └──────┬──────┘
+                │                               │
+         ┌──────▼──────────────────────────────▼──────┐
+         │         GraphRAG Knowledge Layer           │
+         │    (Sanctions + Corporate + Geo context)   │
+         └──────┬──────────────────────────────┬──────┘
+                │                               │
+         ┌──────▼──────┐                ┌──────▼──────┐
+         │ Screening   │                │Investigation│
+         │ Agent       │◄──────────────►│ Agent       │
+         └──────┬──────┘                └──────┬──────┘
+                │                               │
+                └───────────────┬───────────────┘
+                                │
+                        ┌───────▼────────┐
+                        │ Documentation  │
+                        │ Agent          │
+                        │ (Audit Trail)  │
+                        └────────────────┘
 ```
 
-### Monitoring (Development)
-- Prometheus: Metrics collection and alerting
-- Grafana: Visualization and dashboards  
-- Loki: Log aggregation and analysis
-- Promtail: Log shipping agent
+## Component Assessment
 
-</details>
+**🟢 KEEP (Aligned with GenAI-Native Architecture):**
+1. **Ray + vLLM Infrastructure** - Core distributed reasoning backbone
+2. **Sanctions Database** (`watchman.db`) - 3,134+ real sanctions records for GraphRAG
+3. **Pydantic Models** - Type safety for agent interfaces
+4. **Test Infrastructure** - E2E pipeline validation
 
-<details>
-<summary>Usage</summary>
+**🟡 TRANSFORM (Retrofit for GenAI-Native):**
+1. **`src/batch_infer.py`** - Convert to KYC Agent orchestrator
+2. **Data Models** - Extract for agent interface definitions
 
-### Ray Jobs API
+**🔴 REMOVE (ETL Anti-Patterns):**
+1. **Hardcoded Data Sources** - Replace with dynamic agent queries
+2. **Hash-Based Redaction** - GenAI needs contextual understanding
+3. **Placeholder Logic** - Replace with reasoning agents
+4. **Linear Pipeline** - Replace with agent mesh architecture
 
-```python
-import requests
-
-job_data = {
-    "entrypoint": "python src/batch_infer.py",
-    "runtime_env": {"working_dir": "."}
-}
-
-response = requests.post("http://localhost:8265/api/jobs/", json=job_data)
-job_info = response.json()
-print(f"Job ID: {job_info['job_id']}")
-```
-
-</details>
-
-<details>
-<summary>Testing</summary>
-
-```bash
-# Unit tests
-pytest tests/unit/ -v
-
-# End-to-end tests  
-pytest tests/e2e/ -v
-
-# All tests with coverage
-pytest --cov=src tests/
-```
-
-</details>
-
-<details>
-<summary>Configuration</summary>
-
-### Environment Variables
-- `RAY_ADDRESS`: Ray cluster address (default: "auto")
-- `CUDA_VISIBLE_DEVICES`: GPU device selection
-- `RAY_DISABLE_IMPORT_WARNING`: Suppress Ray warnings
-
-### Model Configuration
-Edit `src/batch_infer.py`:
-```python
-cfg = vLLMEngineProcessorConfig(
-    model="meta-llama/Llama-3.1-8B-Instruct",
-    engine_kwargs={"max_model_len": 16384},
-    concurrency=1, 
-    batch_size=64,
-)
-```
-
-</details>
-
-<details>
-<summary>Monitoring</summary>
-
-### Metrics Available
-- Ray cluster resources and task execution
-- vLLM inference throughput and latency  
-- Container resource usage
-- GPU utilization
-
-### Dashboards
-- Ray Dashboard: http://localhost:8265
-- Grafana: http://localhost:3000 (admin/admin)
-- Prometheus: http://localhost:9090
-
-</details>
-
-<details>
-<summary>Deployment</summary>
-
-### Two-Stage Process
-
-**Stage 1: Build & Test**
-1. CI/CD builds image from NVIDIA/PyTorch base
-2. Adds Ray 2.49.1 + vLLM 0.10.0 + dependencies  
-3. Runs test suite
-4. Pushes to Docker Hub as version 0.1.1 on success
-
-**Stage 2: Production**
-5. Production deploys tested image from Docker Hub
-6. Runs Ray cluster with job submission capability
-
-### CI/CD Pipeline
-
-**On Pull Request:**
-- Code linting and formatting
-- Unit and integration tests
-- Security vulnerability scanning
-- OPA policy validation
-- Docker build verification
-
-**On Main Branch Push:**
-- All PR checks plus full end-to-end testing
-- Multi-architecture build (arm64)
-- Push to Docker Hub with version tags
-
-</details>
-
-<details>
-<summary>Security</summary>
-
-- Dependency vulnerability scanning (Safety + Bandit)
-- OPA policy enforcement for container security
-- Resource limits and isolation
-- Minimal attack surface in production images
-
-</details>
-
-
-<details>
-<summary>Links</summary>
-
-- [Docker Hub Repository](https://hub.docker.com/r/michaelsigamani/proj-grounded-telescopes)
-- [Ray Documentation](https://docs.ray.io/)
-- [vLLM Documentation](https://docs.vllm.ai/)
-
-</details>
-
-<details>
-<summary>Requirements</summary>
-
-- Docker & Docker Compose (latest docker compose), vLLM 0.10.0 and Ray 2.49.1
-- NVIDIA Docker Runtime (for GPU support) with nvidia-smi and CUDA drivers installed
-- 24GB+ VRAM minimum (RTX 3090 or equivalent for 8B Llama models)
-- CUDA 12 or higher (required, not optional)
-
-</details>
 

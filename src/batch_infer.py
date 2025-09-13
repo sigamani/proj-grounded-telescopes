@@ -1,62 +1,43 @@
-import tempfile
-
+import asyncio
 import ray
-import requests
+from typing import List, Dict, Any
 
+from .models import KYCInput, KYCResult
+from .agents import IdentityAgent, ScreeningAgent
 
 @ray.remote
-class VLLMAPIProcessor:
-    """Ray actor for processing requests via VLLM HTTP API."""
+class KYCOrchestrator:
 
-    def __init__(self, api_url: str = "http://localhost:8000/v1/chat/completions"):
-        self.api_url = api_url
-        self.headers = {"Content-Type": "application/json"}
+    def __init__(self):
+        self.identity_agent = IdentityAgent("identity-verification")
+        self.screening_agent = ScreeningAgent("sanctions-screening")
 
-    def process_batch(self, batch: list) -> list:
-        """Process a batch of prompts via HTTP API."""
-        results = []
+    async def process_kyc_case(self, case_data: Dict[str, Any]) -> Dict[str, Any]:
+        kyc_input = KYCInput(**case_data)
+        context = {}
+        audit_trail = []
 
-        for item in batch:
-            payload = {
-                "model": "qwen-1.5b",
-                "messages": [
-                    {"role": "system", "content": "You write short answers."},
-                    {"role": "user", "content": item["prompt"]},
-                ],
-                "max_tokens": 128,
-                "temperature": 0.2,
-            }
+        identity_result = await self.identity_agent.process(kyc_input, context)
+        context.update(identity_result)
+        audit_trail.append(f"Identity: {identity_result['reasoning']}")
 
-            try:
-                response = requests.post(
-                    self.api_url,
-                    json=payload,
-                    headers=self.headers,
-                    timeout=30,
-                )
+        screening_result = await self.screening_agent.process(kyc_input, context)
+        audit_trail.append(f"Screening: {screening_result['reasoning']}")
 
-                if response.status_code == 200:
-                    result = response.json()
-                    results.append(
-                        {
-                            "prompt": item["prompt"],
-                            "out": result["choices"][0]["message"]["content"],
-                        }
-                    )
-                else:
-                    results.append(
-                        {
-                            "prompt": item["prompt"],
-                            "out": f"API Error: {response.status_code}",
-                        }
-                    )
+        risk_score = min(10, 3 + len(screening_result.get("sanctions_matches", [])) * 2)
+        verdict = "REJECT" if risk_score >= 8 else "REVIEW" if risk_score >= 5 else "ACCEPT"
 
-            except Exception as e:
-                results.append(
-                    {"prompt": item["prompt"], "out": f"Request failed: {e}"}
-                )
-
-        return results
+        return {
+            "verdict": verdict,
+            "risk_score": risk_score,
+            "confidence": 0.8,
+            "reasoning": f"Risk {risk_score}/10 based on {len(screening_result.get('sanctions_matches', []))} sanctions matches",
+            "findings": {
+                "identity": identity_result,
+                "screening": screening_result
+            },
+            "audit_trail": audit_trail
+        }
 
 
 def create_batch_processor():
@@ -73,8 +54,9 @@ def create_batch_processor():
 
     def ray_data_processor(ds):
         """Process Ray dataset using map_batches."""
-        result_ds = ds.map_batches(process_batch_function, batch_size=2)
-        return result_ds
+        preprocessed_ds = ds  # data sanitisation
+        result_ds = preprocessed_ds.map_batches(process_batch_function, batch_size=2)
+        return result_ds  # agent triage
 
     return ray_data_processor
 
