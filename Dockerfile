@@ -18,9 +18,6 @@ COPY . /app/
 
 COPY --chmod=755 start.sh /app/start.sh
 
-# Create and set permissions for Ray temp directory
-RUN mkdir -p /tmp/ray && chmod 777 /tmp/ray
-
 # Useful env
 ENV HF_HUB_ENABLE_HF_TRANSFER=1
 ENV VLLM_DISABLE_CUSTOM_ALL_REDUCE=1

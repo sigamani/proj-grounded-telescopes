@@ -15,6 +15,7 @@ openai>=1.42.0
 # Utilities
 tqdm>=4.66.5
 transformers>=4.30.0
+hf_transfer>=0.1.6
 
 # Development/testing
 pytest==8.3.2
