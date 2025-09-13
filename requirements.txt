@@ -1,5 +1,5 @@
 # Core Ray and vLLM dependencies  
-ray[data]==2.49.1
+ray[all]==2.49.1
 vllm==0.10.0
 torch>=2.0.0
 pydantic>=2.6,<3
