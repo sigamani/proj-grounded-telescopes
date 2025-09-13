@@ -1,5 +1,5 @@
 # Core Ray and vLLM dependencies  
-ray[data]==2.49.1
+ray[all]==2.49.1
 vllm==0.10.0
 torch>=2.0.0
 pydantic>=2.6,<3
@@ -15,6 +15,7 @@ openai>=1.42.0
 # Utilities
 tqdm>=4.66.5
 transformers>=4.30.0
+hf_transfer>=0.1.6
 
 # Development/testing
 pytest==8.3.2

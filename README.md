@@ -22,15 +22,6 @@ Finally, open-source reliance: this is a double-edged sword. It makes us indepen
 
 ⸻
 
-[![Docker Hub](https://img.shields.io/docker/pulls/michaelsigamani/proj-grounded-telescopes)](https://hub.docker.com/r/michaelsigamani/proj-grounded-telescopes)
-
-### Instructions:
-```bash
-docker compose -f compose.dev.yaml up --build
-docker compose -f compose.prod.yaml up
-```
-
-⸻
 Non-Functional Requirements
 
 Three principles govern system quality: traceability, consistency, and explainability.
@@ -54,18 +45,7 @@ The system begins with the intake of structured and unstructured inputs. All inc
 	•	website_url (string, optional, treated as PII).
 	•	documents (binary, optional, treated as PII) — e.g., shareholder lists or registry extracts.
 
-The outputs are threefold. First, a verdict (ACCEPT | REJECT | REVIEW) must be produced in a form that is explainable and reducible to a clear question any competent junior analyst could understand. Second, structured contextual data about the company, individuals, industry, and online presence must be extracted and verified against authoritative sources. Third, a customer due diligence report must be generated, containing both factual findings and risk signals. This report should “tell the story”: not merely listing data points but presenting them in context, highlighting potential risks, and documenting which patterns were identified by the model that legacy systems typically misclassified as false positives. The report must close with a reasoned recommendation for the analyst’s next action. Critically, this recommendation must pass an explainability threshold: if a jury of non-experts were given the same evidence, they would reach the same conclusion by majority.
-
 ## Risks and Trade-offs
-
-Got it — you want me to step into the role of your “trusted colleague lawyer,” not adversarial but cautious, pointing out risks and tradeoffs you might be downplaying. The voice is supportive but sharp — as if I were reviewing this with you over coffee before we take it into a boardroom. Here’s how I’d phrase it:
-
-⸻
-
-Perfect — here’s a risk–likelihood–impact–mitigation table framed in that same “expert colleague lawyer” tone. It’s structured so you can drop it into a README appendix, an internal risk memo, or even a board deck.
-
-⸻
-## Master Risk Register: GenAI Inference Pipeline for Compliance
 
 | **Risk** | **Likelihood** | **Impact** | **Mitigation Strategy** |
 |----------|----------------|------------|--------------------------|
@@ -86,4 +66,31 @@ Perfect — here’s a risk–likelihood–impact–mitigation table framed in t
 | **Web search integration**: Extending to Google/Perplexity-style search introduces IP, copyright, and consent risks. | High | High (GDPR, IP law, defamation risk if misattributed) | Filter sources at ingestion. Store provenance metadata. Restrict use to fact-verifiable domains (official registers, licensed APIs). Maintain legal review of third-party ingestion. |
 ⸻
 
+=======
+# KYC Compliance - GenAI Agent Architecture
+
+## Design Philosophy
+
+### Traceability Priority
+- **Human Process Fidelity**: Data flow must mirror human KYC officer dependency chain (identity → risk assessment → screening → investigation → documentation)
+- **Chain of Custody**: Each step maps directly to human KYC officer activities, making audit trails intuitive for regulators and stakeholders
+- **Process Transparency**: Stakeholders must be able to understand AI decisions because they follow familiar human workflows
+
+### Explainability Priority
+- **Natural Language Reasoning** > **Algorithmic Complexity**: A GenAI system that says "Found potential match for 'Mohammad Smith' considering common spelling variations" is infinitely more explainable than a black-box Levenshtein distance algorithm with 20 years of accumulated edge-case rules
+- **Human-Readable Logic**: Prompts that mirror human thought processes ("Does this person appear on sanctions lists?") vs. cryptic algorithmic thresholds
+- **Contextual Understanding**: GenAI can explain *why* it flagged something in plain language, not just *that* it was flagged
+
+### Architecture 
+- **GenAI-Native Design**: Build architectures that leverage GenAI's reasoning, context understanding, and natural language capabilities from the ground up
+- **Anti-Pattern**: OpenAI wrapper functions bolted onto legacy ETL pipelines (30 Lambda step functions triggered by Glue) = using smartphones only for phone calls
+- **Transformative Patterns**: Ray clusters with vLLM for distributed reasoning, GraphRAG for contextual knowledge synthesis, agent-based workflows that mirror human cognitive patterns
+
+[![Docker Hub](https://img.shields.io/docker/pulls/michaelsigamani/proj-grounded-telescopes)](https://hub.docker.com/r/michaelsigamani/proj-grounded-telescopes)
+
+### Run:
+```bash
+docker compose -f compose.dev.yaml up --build
+docker compose -f compose.prod.yaml up
+```
 
