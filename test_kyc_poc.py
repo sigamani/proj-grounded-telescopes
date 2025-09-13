@@ -1,6 +1,9 @@
-import asyncio
+# import asyncio
+
 import ray
+
 from src.batch_infer import KYCOrchestrator
+
 
 def test_kyc_pipeline():
 
@@ -8,7 +11,7 @@ def test_kyc_pipeline():
         "business_name": "ISLAMIC REVOLUTIONARY GUARD",
         "address": "Tehran, Iran",
         "country_code": "IR",
-        "beneficial_owners": []
+        "beneficial_owners": [],
     }
 
     if not ray.is_initialized():
@@ -23,11 +26,12 @@ def test_kyc_pipeline():
     print(f"Risk Score: {result['risk_score']}/10")
     print(f"Reasoning: {result['reasoning']}")
     print("\nAudit Trail:")
-    for step in result['audit_trail']:
+    for step in result["audit_trail"]:
         print(f"  - {step}")
 
     ray.shutdown()
     return result
+
 
 if __name__ == "__main__":
     test_kyc_pipeline()

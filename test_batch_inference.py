@@ -3,8 +3,10 @@
 Simple test script to validate vLLM batch inference through HTTP API.
 """
 import json
-import requests
 import sys
+
+import requests
+
 
 def test_vllm_batch_inference():
     """Test the vLLM server with multiple requests."""
@@ -13,7 +15,7 @@ def test_vllm_batch_inference():
     test_prompts = [
         "Summarise AML PEP-screening risks.",
         "What are the main compliance challenges?",
-        "Explain the key features of KYC processes."
+        "Explain the key features of KYC processes.",
     ]
 
     api_url = "http://localhost:8000/v1/chat/completions"
@@ -33,10 +35,10 @@ def test_vllm_batch_inference():
             "model": "qwen-1.5b",
             "messages": [
                 {"role": "system", "content": "You write short answers."},
-                {"role": "user", "content": prompt}
+                {"role": "user", "content": prompt},
             ],
             "max_tokens": 128,
-            "temperature": 0.2
+            "temperature": 0.2,
         }
 
         try:
@@ -45,34 +47,26 @@ def test_vllm_batch_inference():
             if response.status_code == 200:
                 result = response.json()
                 answer = result["choices"][0]["message"]["content"]
-                results.append({
-                    "prompt": prompt,
-                    "response": answer,
-                    "status": "success"
-                })
+                results.append(
+                    {"prompt": prompt, "response": answer, "status": "success"}
+                )
                 print(f"✓ Success: {answer[:100]}...")
 
             else:
                 error_msg = f"API Error: {response.status_code}"
-                results.append({
-                    "prompt": prompt,
-                    "response": error_msg,
-                    "status": "error"
-                })
+                results.append(
+                    {"prompt": prompt, "response": error_msg, "status": "error"}
+                )
                 print(f"✗ Error: {error_msg}")
 
         except Exception as e:
             error_msg = f"Request failed: {e}"
-            results.append({
-                "prompt": prompt,
-                "response": error_msg,
-                "status": "error"
-            })
+            results.append({"prompt": prompt, "response": error_msg, "status": "error"})
             print(f"✗ Exception: {error_msg}")
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("BATCH INFERENCE TEST RESULTS")
-    print("="*60)
+    print("=" * 60)
 
     success_count = sum(1 for r in results if r["status"] == "success")
     error_count = len(results) - success_count
@@ -98,12 +92,15 @@ def test_vllm_batch_inference():
 
     return success_count == len(results)
 
+
 if __name__ == "__main__":
     success = test_vllm_batch_inference()
 
     if success:
         print("\n🎉 All batch inference tests passed!")
-        print("✅ vLLM server is working correctly with Qwen/Qwen2.5-1.5B-Instruct model")
+        print(
+            "✅ vLLM server is working correctly with Qwen/Qwen2.5-1.5B-Instruct model"
+        )
         sys.exit(0)
     else:
         print("\n❌ Some batch inference tests failed!")
