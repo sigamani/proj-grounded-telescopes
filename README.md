@@ -1,11 +1,11 @@
-# KYC Compliance Automation - GenAI Agent Architecture
+# KYC Compliance - GenAI Agent Architecture
 
-## System Design Philosophy
+## Design Philosophy
 
 ### Non-Functional Requirements Traceability
 - **Human Process Fidelity**: Data flow must mirror human KYC officer dependency chain (identity → risk assessment → screening → investigation → documentation)
 - **Chain of Custody**: Each step maps directly to human KYC officer activities, making audit trails intuitive for regulators and stakeholders
-- **Process Transparency**: Stakeholders can understand AI decisions because they follow familiar human workflows
+- **Process Transparency**: Stakeholders must be able to understand AI decisions because they follow familiar human workflows
 
 ### Explainability Priority
 - **Natural Language Reasoning** > **Algorithmic Complexity**: A GenAI system that says "Found potential match for 'Mohammad Smith' considering common spelling variations" is infinitely more explainable than a black-box Levenshtein distance algorithm with 20 years of accumulated edge-case rules
@@ -17,7 +17,7 @@
 - **Anti-Pattern**: OpenAI wrapper functions bolted onto legacy ETL pipelines (30 Lambda step functions triggered by Glue) = using smartphones only for phone calls
 - **Transformative Patterns**: Ray clusters with vLLM for distributed reasoning, GraphRAG for contextual knowledge synthesis, agent-based workflows that mirror human cognitive patterns
 
-## Skeleton Architecture Pattern
+## Preliminary Architecture Pattern
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
