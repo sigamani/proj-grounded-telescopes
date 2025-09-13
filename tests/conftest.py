@@ -6,7 +6,8 @@ import tempfile
 from unittest.mock import Mock, patch
 
 import pytest
-# import ray
+
+import ray
 
 
 @pytest.fixture(scope="session")
