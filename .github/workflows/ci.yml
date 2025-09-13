@@ -23,8 +23,8 @@ jobs:
     
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install black flake8 isort mypy
+        python3 -m pip install --upgrade pip
+        pip3 install black flake8 isort mypy
     
     - name: Run Black
       run: black --check --diff src/ tests/
@@ -67,9 +67,9 @@ jobs:
     
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install --no-cache-dir -r requirements.txt
-        pip install --no-cache-dir pytest pytest-cov pytest-mock
+        python3 -m pip install --upgrade pip
+        pip3 install --no-cache-dir -r requirements.txt
+        pip3 install --no-cache-dir pytest pytest-cov pytest-mock
     
     - name: Run unit tests
       run: |
@@ -94,8 +94,8 @@ jobs:
     
     - name: Install security tools
       run: |
-        python -m pip install --upgrade pip
-        pip install safety bandit
+        python3 -m pip install --upgrade pip
+        pip3 install safety bandit
     
     - name: Run Safety (dependency vulnerability scan)
       run: |
@@ -314,8 +314,8 @@ jobs:
     
     - name: Run integration tests
       run: |
-        python -m pip install --upgrade pip
-        pip install pytest docker requests
+        python3 -m pip install --upgrade pip
+        pip3 install pytest docker requests
         pytest tests/e2e/test_docker_integration.py -v -x
     
     - name: Check service health
@@ -385,8 +385,8 @@ jobs:
     
     - name: Install test dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install pytest docker requests
+        python3 -m pip install --upgrade pip
+        pip3 install pytest docker requests
     
     - name: Run full E2E tests
       run: |
@@ -423,8 +423,8 @@ jobs:
     
     - name: Check for dependency updates
       run: |
-        python -m pip install --upgrade pip
-        pip install pip-audit
+        python3 -m pip install --upgrade pip
+        pip3 install pip-audit
         pip-audit -r requirements.txt --format=json --output=audit-results.json || true
     
     - name: Upload audit results
