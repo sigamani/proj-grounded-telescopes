@@ -16,7 +16,7 @@ FALSE_POSITIVE_CASES = [
         ],
         "expected_verdict": "ACCEPT",
         "expected_risk": 2,
-        "sanctions_context": "Common name"
+        "sanctions_context": "Common name",
     },
     {
         "case_id": "FP002",
@@ -35,7 +35,7 @@ FALSE_POSITIVE_CASES = [
         ],
         "expected_verdict": "ACCEPT",
         "expected_risk": 2,
-        "sanctions_context": "Different person"
+        "sanctions_context": "Different person",
     },
 ]
 
@@ -57,7 +57,7 @@ TRUE_POSITIVE_CASES = [
         ],
         "expected_verdict": "REJECT",
         "expected_risk": 10,
-        "sanctions_context": "Syrian government official"
+        "sanctions_context": "Syrian government official",
     },
     {
         "case_id": "TP002",
@@ -76,7 +76,7 @@ TRUE_POSITIVE_CASES = [
         ],
         "expected_verdict": "REJECT",
         "expected_risk": 10,
-        "sanctions_context": "Hamas affiliation"
+        "sanctions_context": "Hamas affiliation",
     },
 ]
 
