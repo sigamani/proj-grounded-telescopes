@@ -27,14 +27,14 @@ jobs:
         pip3 install black flake8 isort mypy
     
     - name: Run Black
-      run: black --check --diff src/ tests/
-    
+      run: black --check --diff --line-length=88 .
+
     - name: Run isort
-      run: isort --check-only --diff src/ tests/
-    
+      run: isort --check-only --diff --profile black .
+
     - name: Run Flake8
-      run: flake8 src/ tests/ --max-line-length=88 --extend-ignore=E203,W503
-    
+      run: flake8 --exclude=proj-env --max-line-length=88 --extend-ignore=E203,W503 .
+
     - name: Run MyPy
       run: mypy src/ --ignore-missing-imports
 
@@ -73,7 +73,7 @@ jobs:
     
     - name: Run unit tests
       run: |
-        pytest tests/unit/ -v --cov=src --cov-report=xml --cov-report=term
+        pytest tests/ -v --cov=src --cov-report=xml --cov-report=term
     
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
@@ -114,7 +114,7 @@ jobs:
     
     - name: Run Bandit (security linting)
       run: |
-        bandit -r src/ -f json -o bandit-report.json || true
+        bandit -r src/ data/ -f json -o bandit-report.json || true
         if [ ! -f bandit-report.json ]; then
           echo '{"results": []}' > bandit-report.json
         fi
@@ -140,10 +140,9 @@ jobs:
       run: |
         # Create inspection data for policy validation
         mkdir -p opa-data
-        
+
         # Extract Docker configuration for OPA evaluation
-        docker compose -f compose.dev.yaml config > opa-data/docker-compose-config.yaml
-        docker compose -f compose.prod.yaml config > opa-data/docker-compose-prod-config.yaml
+        docker compose -f compose.yaml config > opa-data/docker-compose-config.yaml
     
     - name: Run OPA Docker Security Policies
       run: |
@@ -161,19 +160,16 @@ jobs:
         
         # Validate against Docker configurations
         opa eval -d policies/ -i opa-data/docker-compose-config.yaml "data.docker.security.deny[_]" --format pretty
-        opa eval -d policies/ -i opa-data/docker-compose-prod-config.yaml "data.docker.security.deny[_]" --format pretty
     
     - name: Run OPA Resource Limit Policies  
       run: |
         # Validate resource policies
         opa eval -d policies/ -i opa-data/docker-compose-config.yaml "data.docker.resources.deny[_]" --format pretty
-        opa eval -d policies/ -i opa-data/docker-compose-prod-config.yaml "data.docker.resources.deny[_]" --format pretty
     
     - name: Run OPA Compliance Policies
       run: |
         # Validate compliance policies
         opa eval -d policies/ -i opa-data/docker-compose-config.yaml "data.security.compliance.deny[_]" --format pretty
-        opa eval -d policies/ -i opa-data/docker-compose-prod-config.yaml "data.security.compliance.deny[_]" --format pretty
     
     - name: Generate OPA Policy Report
       run: |
@@ -307,16 +303,16 @@ jobs:
         touch monitoring/pomtail/config.yaml
         touch monitoring/grafana/provisioning
     
-    - name: Start Docker Compose stack (dev environment)
+    - name: Start Docker Compose stack
       run: |
-        docker compose -f compose.dev.yaml up -d --wait
+        docker compose -f compose.yaml up -d --wait
         sleep 30  # Additional wait for Ray to be ready
     
     - name: Run integration tests
       run: |
         python3 -m pip install --upgrade pip
         pip3 install pytest docker requests
-        pytest tests/e2e/test_docker_integration.py -v -x
+        pytest tests/kyc_tests.py -v -x
     
     - name: Check service health
       run: |
@@ -334,7 +330,7 @@ jobs:
     - name: Cleanup
       if: always()
       run: |
-        docker compose -f compose.dev.yaml down -v
+        docker compose -f compose.yaml down -v
         docker system prune -f
 
   e2e-tests:
@@ -380,7 +376,7 @@ jobs:
     
     - name: Start Docker Compose stack (dev environment)
       run: |
-        docker compose -f compose.dev.yaml up -d --wait
+        docker compose -f compose.yaml up -d --wait
         sleep 60  # Longer wait for full E2E readiness
     
     - name: Install test dependencies
@@ -390,13 +386,13 @@ jobs:
     
     - name: Run full E2E tests
       run: |
-        pytest tests/e2e/ -v --tb=short
+        pytest tests/ -v --tb=short
       timeout-minutes: 30
     
     - name: Generate test report
       if: always()
       run: |
-        pytest tests/e2e/ --junitxml=e2e-results.xml || true
+        pytest tests/ --junitxml=e2e-results.xml || true
     
     - name: Upload test results
       uses: actions/upload-artifact@v4
@@ -408,7 +404,7 @@ jobs:
     - name: Cleanup
       if: always()
       run: |
-        docker compose -f compose.dev.yaml down -v
+        docker compose -f compose.yaml down -v
         docker system prune -f
 
   dependency-check:

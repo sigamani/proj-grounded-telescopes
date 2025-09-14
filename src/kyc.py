@@ -47,7 +47,7 @@ class GraphRAGKnowledgeBase:
         return {
             "matches": [],
             "risk_factors": [],
-            "contextual_reasoning": f"Analyzing {entity_name} ({nationality})"
+            "contextual_reasoning": f"Analyzing {entity_name} ({nationality})",
         }
 
     def assess_country_risk(self, country_code: str) -> Dict[str, Any]:
@@ -88,7 +88,7 @@ class IdentityAgent(KYCAgent):
             "agent": self.name,
             "entities_found": entities,
             "beneficial_owners": beneficial_owner_names,
-            "reasoning": f"{input_data.business_name}"
+            "reasoning": f"{input_data.business_name}",
         }
 
 
