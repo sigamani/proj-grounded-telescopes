@@ -66,15 +66,15 @@ class NameScreeningAgent(HumanKYCAgent):
         indicators = []
         name_lower = name.lower()
         patterns = [
-            (r'\bislamic\s+revolutionary\s+guard\b', "Iranian Revolutionary Guard Corps reference (OFAC sanctioned entity)"),
-            (r'\brevolutionary\s+guard\b', "Revolutionary Guard military reference"),
-            (r'\bal[-\s]?assad\b', "Syrian political figure surname pattern"),
+            (r'\bzorax\b', "High-risk defense entity pattern"),
+            (r'\bzorax\s+defense\b', "Defense industry entity (enhanced screening required)"),
+            (r'\bnorthstar\b', "Restricted trading entity pattern"),
             (r'\bmiddle\s+east\b', "Middle Eastern entity designation"),
-            (r'\bislamic\b', "Islamic organization designation (enhanced screening required)"),
+            (r'\bdefense|military\b', "Defense/military organization designation (enhanced screening required)"),
             (r'\btrading|import|export\b', "Trade-related business (requires enhanced due diligence)"),
-            (r'\bsyrian|syria\b', "Syrian geographical reference"),
-            (r'\biranian|iran\b', "Iranian geographical reference"),
-            (r'\bal[-\s]', "Arabic patronymic naming pattern")
+            (r'\benergy|petroleum|oil\b', "Energy sector entity (enhanced due diligence required)"),
+            (r'\bmining|mineral\b', "Mining sector entity (enhanced due diligence required)"),
+            (r'\btech|technology\b', "Technology sector entity")
         ]
         for pattern, indicator in patterns:
             if re.search(pattern, name_lower):

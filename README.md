@@ -94,6 +94,94 @@ docker compose -f compose.dev.yaml up --build
 docker compose -f compose.prod.yaml up
 ```
 
+## API Usage
+
+### OpenAI-Compatible Endpoints
+
+The system provides OpenAI-compatible API endpoints for KYC compliance processing:
+
+#### 1. Chat Completions (Batch Processing)
+Submit all 10 test cases as a single batch job:
+
+```bash
+curl -X POST http://localhost:8001/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "kyc-compliance-v1",
+    "messages": [{
+      "role": "user",
+      "content": "[{
+        \"business_name\": \"ZORAX DEFENSE SYSTEMS LTD\",
+        \"address\": \"Tehran, Iran\",
+        \"country_code\": \"IR\"
+      },
+      {
+        \"business_name\": \"MAPLE TECH SOLUTIONS INC\",
+        \"address\": \"123 Bay Street, Toronto, ON M5J 2T3\",
+        \"country_code\": \"CA\"
+      },
+      ... (all 10 test cases)
+      ]"
+    }]
+  }'
+```
+
+#### 2. Job Status Check
+Monitor batch processing progress:
+
+```bash
+curl http://localhost:8001/v1/jobs/{job_id}
+```
+
+#### 3. List All Jobs
+View all submitted batch jobs:
+
+```bash
+curl http://localhost:8001/v1/jobs
+```
+
+#### 4. Get Test Cases
+Retrieve the 10 predefined test cases:
+
+```bash
+curl http://localhost:8001/v1/kyc/test-cases
+```
+
+#### 5. Direct KYC Check
+Process a single case synchronously:
+
+```bash
+curl -X POST http://localhost:8001/v1/kyc/check \
+  -H "Content-Type: application/json" \
+  -d '{
+    "business_name": "TEST COMPANY LTD",
+    "address": "123 Test Street, London, UK",
+    "country_code": "GB"
+  }'
+```
+
+### Batch Processing Workflow
+
+1. **Submit Job**: Send all 10 cases in one request
+2. **Get Job ID**: Receive immediate response with job ID
+3. **Monitor Progress**: Poll job status endpoint
+4. **Retrieve Results**: Get complete results when processing finishes
+
+### Expected Results
+
+- **High-risk cases** (IR, KP): `REJECT` verdict
+- **Medium-risk cases** (RU, VE): `REVIEW` verdict
+- **Low-risk cases** (CA, US, GB, DE, AU, JP): `ACCEPT` verdict
+
+### Automated Testing
+
+Run the complete curl example:
+
+```bash
+chmod +x curl_example.sh
+./curl_example.sh
+```
+
 ## Summary of KYC Compliance System Development
 
 ### ✅ **What Was Accomplished**

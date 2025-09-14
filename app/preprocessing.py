@@ -123,10 +123,10 @@ def main():
 
         print("🎉 OFAC data preprocessing completed successfully!")
 
-        # Test query
+        # Test query with synthetic term
         print("\n🔍 Testing sanctions search...")
-        test_matches = preprocessor.get_sanctions_matches("ISLAMIC")
-        print(f"Found {len(test_matches)} matches for 'ISLAMIC'")
+        test_matches = preprocessor.get_sanctions_matches("ZORAX")
+        print(f"Found {len(test_matches)} matches for 'ZORAX'")
         for match in test_matches[:3]:
             print(f"  - {match['name']}")
 

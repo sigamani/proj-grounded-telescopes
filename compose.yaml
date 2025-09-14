@@ -49,30 +49,35 @@ services:
     networks:
       - ray-network
 
-  kyc-processor:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    depends_on:
-      ray-head:
-        condition: service_healthy
-    environment:
-      - RAY_ADDRESS=ray://ray-head:10001
-      - VLLM_URL=http://ray-head:8000/v1/chat/completions
-      - VLLM_MODEL=${VLLM_SERVED_NAME:-qwen-1.5b}
-    working_dir: /app
-    entrypoint: ["bash", "-lc"]
-    command: >
-      "python main.py --mode ${KYC_MODE:-server} --ray-address ray://ray-head:10001"
-    volumes:
-      - ./:/app
-    networks:
-      - ray-network
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: ["gpu"]
+   kyc-processor:
+     build:
+       context: .
+       dockerfile: Dockerfile
+     depends_on:
+       ray-head:
+         condition: service_healthy
+     ports:
+       - "8001:8000"   # KYC API server
+     environment:
+       - RAY_ADDRESS=ray://ray-head:10001
+       - VLLM_URL=http://ray-head:8000/v1/chat/completions
+       - VLLM_MODEL=${VLLM_SERVED_NAME:-qwen-1.5b}
+       - RAY_NUM_CPUS=${RAY_NUM_CPUS:-4}
+       - RAY_NUM_GPUS=${RAY_NUM_GPUS:-0}
+       - RAY_OBJECT_STORE_MEMORY=${RAY_OBJECT_STORE_MEMORY:-2}
+     working_dir: /app
+     entrypoint: ["bash", "-lc"]
+     command: >
+       "python main.py --mode ${KYC_MODE:-server} --ray-address ray://ray-head:10001 --port 8000"
+     volumes:
+       - ./:/app
+     networks:
+       - ray-network
+     deploy:
+       resources:
+         reservations:
+           devices:
+             - capabilities: ["gpu"]
 
   kyc-tests:
     build:
