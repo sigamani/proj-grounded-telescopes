@@ -5,6 +5,15 @@ torch>=2.0.0
 pydantic>=2.6,<3
 pyarrow>=12,<16
 
+# GraphRAG and vector database dependencies
+neo4j-graphrag==1.10.0
+chromadb==0.5.23
+lancedb==0.25.0
+fsspec>=2024.9.0
+json-repair>=0.44.1
+numpy>=2,<3
+pypdf>=6,<7
+
 # ML/AI libraries
 huggingface_hub>=0.33.0
 datasets==2.21.0
@@ -17,6 +26,22 @@ weave>=0.50.0
 
 # Utilities
 tqdm>=4.66.5
+hf_transfer>=0.1.6
+
+# Agentic Orchestration
+langgraph>=0.2.0
+langchain>=0.3.0
+langchain-openai>=0.2.0
+langchain-community>=0.3.0
+neo4j
+langfuse
+
+# Audit & Traceability
+pydantic>=2.6,<3
+pyyaml>=6.0
+
+# XML parsing
+lxml>=4.9.0
 
 # Development/testing
 pytest==8.3.2
