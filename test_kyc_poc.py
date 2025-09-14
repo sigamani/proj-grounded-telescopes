@@ -29,8 +29,11 @@ def test_kyc_pipeline():
     for step in result["audit_trail"]:
         print(f"  - {step}")
 
-    ray.shutdown()
-    return result
+    # Avoid ray.shutdown() in tests to prevent circular import issues
+    # Ray will automatically cleanup when the process exits
+    assert result is not None
+    assert 'verdict' in result
+    assert 'audit_trail' in result
 
 
 if __name__ == "__main__":
