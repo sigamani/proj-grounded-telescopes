@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import argparse
 import os
 import sys
@@ -6,7 +5,7 @@ import sys
 import ray
 
 from data.kyc_data import FALSE_POSITIVE_CASES, TRUE_POSITIVE_CASES
-from src.kyc import KYCOrchestrator, create_kyc_batch_processor
+from app.kyc import KYCOrchestrator, create_kyc_batch_processor
 from tests.kyc_tests import (
     test_batch_processing,
     test_enhanced_kyc_pipeline,
@@ -15,9 +14,22 @@ from tests.kyc_tests import (
 )
 
 
-def run_kyc_server():
+def run_kyc_server(ray_address="auto"):
     if not ray.is_initialized():
-        ray.init()
+        if ray_address == "auto":
+            # Local development mode
+            ray.init(
+                num_cpus=4,
+                num_gpus=0,
+                object_store_memory=2*1024*1024*1024,  # 2GB object store
+                dashboard_host="0.0.0.0",
+                dashboard_port=8265,
+                include_dashboard=True,
+                ignore_reinit_error=True,
+                log_to_driver=True
+            )
+        else:
+            ray.init(address=ray_address)
     orchestrator = KYCOrchestrator.remote()
     return orchestrator
 
@@ -37,13 +49,18 @@ def run_batch_inference():
     return ray.get(futures)
 
 
+def setup_graphrag():
+    from app.preprocessing import main as setup
+    return setup()
+
+
 def main():
     parser = argparse.ArgumentParser(description="KYC GenAI-Native Compliance System")
     parser.add_argument(
         "--mode",
-        choices=["server", "test", "batch"],
+        choices=["server", "test", "batch", "setup"],
         default="server",
-        help="Run mode: server, test, or batch inference",
+        help="Run mode: server, test, batch inference, or setup GraphRAG",
     )
     parser.add_argument("--ray-address", default="auto", help="Ray cluster address")
 
@@ -54,11 +71,13 @@ def main():
 
     try:
         if args.mode == "server":
-            run_kyc_server()
+            run_kyc_server(args.ray_address)
         elif args.mode == "test":
             run_tests()
         elif args.mode == "batch":
             run_batch_inference()
+        elif args.mode == "setup":
+            setup_graphrag()
 
     except KeyboardInterrupt:
         if ray.is_initialized():

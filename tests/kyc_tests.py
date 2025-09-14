@@ -1,7 +1,7 @@
 import ray
 
 from data.kyc_data import FALSE_POSITIVE_CASES, TRUE_POSITIVE_CASES
-from src.kyc import KYCOrchestrator
+from app.kyc import KYCOrchestrator
 
 
 def test_kyc_pipeline():
