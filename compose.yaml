@@ -1,0 +1,102 @@
+services:
+  ray-head:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ray-head
+    ports:
+      - "127.0.0.1:8000:8000"   # vLLM
+      - "127.0.0.1:8265:8265"   # Ray dashboard
+      - "127.0.0.1:8080:8080"   # Ray metrics
+      - "127.0.0.1:9090:9090"   # Prometheus
+      - "127.0.0.1:3000:3000"   # Grafana
+      - "6379:6379"             # Ray client
+      - "10001:10001"           # Ray RPC
+    volumes:
+      - ./:/app
+      - /models:/models
+      - ray-data:/tmp/ray
+    environment:
+      - RAY_ADDRESS=auto
+      - HF_TOKEN=${HF_TOKEN:-}
+      - VLLM_MODEL=${VLLM_MODEL:-Qwen/Qwen2.5-1.5B-Instruct}
+      - VLLM_SERVED_NAME=${VLLM_SERVED_NAME:-qwen-1.5b}
+      - VLLM_DOWNLOAD_DIR=/models
+      - VLLM_PORT=8000
+      - VLLM_DTYPE=auto
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+    command: >
+      bash -c "
+      if [ \"$$ENVIRONMENT\" = \"production\" ]; then
+        ray start --head --dashboard-host=0.0.0.0 --port=6379 --dashboard-port=8265 --block
+      else
+        ray start --head --dashboard-host=0.0.0.0 --port=6379 --dashboard-port=8265 --block
+      fi"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: ["gpu"]
+    ipc: host
+    ulimits:
+      memlock: -1
+      stack: 67108864
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8265 && (curl -fsS http://localhost:8000/v1/models || true)"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+    networks:
+      - ray-network
+
+  kyc-processor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      ray-head:
+        condition: service_healthy
+    environment:
+      - RAY_ADDRESS=ray://ray-head:10001
+      - VLLM_URL=http://ray-head:8000/v1/chat/completions
+      - VLLM_MODEL=${VLLM_SERVED_NAME:-qwen-1.5b}
+    working_dir: /app
+    entrypoint: ["bash", "-lc"]
+    command: >
+      "python main.py --mode ${KYC_MODE:-server} --ray-address ray://ray-head:10001"
+    volumes:
+      - ./:/app
+    networks:
+      - ray-network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: ["gpu"]
+
+  kyc-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      ray-head:
+        condition: service_healthy
+    environment:
+      - RAY_ADDRESS=ray://ray-head:10001
+    working_dir: /app
+    entrypoint: ["bash", "-lc"]
+    command: "python main.py --mode test --ray-address ray://ray-head:10001"
+    volumes:
+      - ./:/app
+    networks:
+      - ray-network
+    profiles:
+      - testing
+
+networks:
+  ray-network:
+    driver: bridge
+
+volumes:
+  ray-data:
+    driver: local
