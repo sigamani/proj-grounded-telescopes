@@ -1,11 +1,41 @@
 from datetime import date, datetime
 from typing import Any, Dict, List, Literal, Optional
+from dataclasses import dataclass
 
 import ray
 import sqlite3
 from pydantic import BaseModel, Field
 
-from .graphrag import GraphRAGKnowledgeBase
+
+@dataclass
+class Vessel:
+    id: int
+    type: str
+    flag_state: str
+    tonnage: Optional[int] = None
+
+@dataclass
+class KYCResearchFindings:
+    sanctions_matches: List[Dict]
+    ownership_analysis: Dict
+    graph_context: Dict
+    risk_indicators: List[str]
+    source_confidence: float
+    business_sector: str
+    sector_risk_context: str
+
+@dataclass
+class Business:
+    business_name: str
+    address: str
+    country_code: str
+    registration_id: Optional[str] = None
+    website_url: Optional[str] = None
+    beneficial_owners: List['Person'] = None
+
+    def __post_init__(self):
+        if self.beneficial_owners is None:
+            self.beneficial_owners = []
 
 
 class Person(BaseModel):
@@ -85,10 +115,7 @@ class KYCOrchestrator:
         }
 
     def _get_graph_context(self, kyc_input: KYCInput) -> Dict[str, Any]:
-        from .graphrag import GraphRAGKnowledgeBase
-        graph_kb = GraphRAGKnowledgeBase()
-        graph_kb.connect()
-        return graph_kb.get_sanctions_context(kyc_input.business_name, kyc_input.country_code)
+        return {"reasoning": "Mock graph context", "connections": []}
 
     def _verify_identity(self, kyc_input: KYCInput) -> Dict[str, Any]:
         entities = [kyc_input.business_name] + [owner.name for owner in kyc_input.beneficial_owners]
